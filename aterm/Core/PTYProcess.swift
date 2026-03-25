@@ -78,7 +78,9 @@ final class PTYProcess: Sendable {
         let cont = self.exitContinuation
         source.setEventHandler {
             var status: Int32 = 0
-            waitpid(pid, &status, WNOHANG)
+            // Blocking wait is safe here — we're on a background queue and
+            // the dispatch source only fires after the child has exited
+            waitpid(pid, &status, 0)
             let exitCode = pty_wifexited(status) != 0 ? pty_wexitstatus(status) : -1
             cont.yield(exitCode)
             cont.finish()
@@ -103,6 +105,9 @@ final class PTYProcess: Sendable {
         processSource.cancel()
         kill(childPID, SIGHUP)
         close(masterFD)
+        // Reap the child to prevent zombie
+        var status: Int32 = 0
+        waitpid(childPID, &status, 0)
         Log.pty.info("Shell PID \(self.childPID) terminated")
     }
 
