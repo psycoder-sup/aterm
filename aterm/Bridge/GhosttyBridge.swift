@@ -313,20 +313,23 @@ enum GhosttyBridge {
             ghostty_key_event_set_key(event, key)
             ghostty_key_event_set_mods(event, mods)
 
+            // Encode must happen inside withCString — the event borrows the pointer.
             if let text {
-                text.withCString { cstr in
+                return text.withCString { cstr in
                     ghostty_key_event_set_utf8(event, cstr, text.utf8.count)
+                    var buf = [CChar](repeating: 0, count: 128)
+                    var written: Int = 0
+                    let result = ghostty_key_encoder_encode(handle, event, &buf, buf.count, &written)
+                    return (result == GHOSTTY_SUCCESS && written > 0)
+                        ? buf.prefix(written).map { UInt8(bitPattern: $0) } : nil
                 }
+            } else {
+                var buf = [CChar](repeating: 0, count: 128)
+                var written: Int = 0
+                let result = ghostty_key_encoder_encode(handle, event, &buf, buf.count, &written)
+                return (result == GHOSTTY_SUCCESS && written > 0)
+                    ? buf.prefix(written).map { UInt8(bitPattern: $0) } : nil
             }
-
-            var buf = [CChar](repeating: 0, count: 128)
-            var written: Int = 0
-            let result = ghostty_key_encoder_encode(handle, event, &buf, buf.count, &written)
-
-            if result == GHOSTTY_SUCCESS, written > 0 {
-                return buf.prefix(written).map { UInt8(bitPattern: $0) }
-            }
-            return nil
         }
     }
 }
