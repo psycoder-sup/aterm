@@ -9,8 +9,9 @@ struct TerminalContentView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: TerminalHostView, context: Context) {
-        let gen = core.outputGeneration
-        nsView.appendChunkIfNew(core.latestChunk, generation: gen)
+        if let snapshot = core.latestSnapshot {
+            nsView.renderSnapshot(snapshot, generation: core.snapshotGeneration)
+        }
     }
 }
 
@@ -18,11 +19,7 @@ final class TerminalHostView: NSView {
     private let textView: TerminalInputTextView
     private let scrollView: NSScrollView
     private var lastGeneration: UInt64 = 0
-
-    private static let outputAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular),
-        .foregroundColor: NSColor.white,
-    ]
+    private let font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
 
     init(core: TerminalCore) {
         self.scrollView = NSScrollView()
@@ -35,8 +32,8 @@ final class TerminalHostView: NSView {
         textView.onInput = { [weak core] text in
             core?.sendInput(text)
         }
-        textView.onBytes = { [weak core] bytes in
-            core?.sendBytes(bytes)
+        textView.onKeyEvent = { [weak core] action, key, mods, text in
+            core?.sendKeyEvent(action: action, key: key, mods: mods, text: text)
         }
     }
 
@@ -57,13 +54,12 @@ final class TerminalHostView: NSView {
         window?.makeFirstResponder(textView)
     }
 
-    func appendChunkIfNew(_ chunk: String, generation: UInt64) {
-        guard generation != lastGeneration, !chunk.isEmpty else { return }
+    func renderSnapshot(_ snapshot: GridSnapshot, generation: UInt64) {
+        guard generation != lastGeneration else { return }
         lastGeneration = generation
-        textView.textStorage?.append(
-            NSAttributedString(string: chunk, attributes: Self.outputAttributes)
-        )
-        textView.scrollToEndOfDocument(nil)
+
+        let attributed = snapshot.toAttributedString(font: font)
+        textView.textStorage?.setAttributedString(attributed)
     }
 
     private func setupViews() {
@@ -78,7 +74,7 @@ final class TerminalHostView: NSView {
         textView.isRichText = false
         textView.backgroundColor = .terminalBackground
         textView.textColor = .white
-        textView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        textView.font = font
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticTextReplacementEnabled = false
