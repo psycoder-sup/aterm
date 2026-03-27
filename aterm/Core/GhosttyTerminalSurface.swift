@@ -1,0 +1,130 @@
+import AppKit
+
+/// Per-terminal object wrapping a `ghostty_surface_t`.
+/// Manages the surface lifecycle: creation, resize, focus, and teardown.
+@MainActor
+final class GhosttyTerminalSurface: @unchecked Sendable {
+    let id = UUID()
+
+    nonisolated(unsafe) private(set) var surface: ghostty_surface_t?
+    nonisolated(unsafe) private var callbackContextRef: Unmanaged<SurfaceCallbackContext>?
+
+    // MARK: - Surface Creation
+
+    /// Create the ghostty surface and bind it to the given view.
+    /// Must be called after the view is in a window.
+    func createSurface(view: TerminalSurfaceView) {
+        guard let ghosttyApp = GhosttyApp.shared.app else {
+            Log.ghostty.error("Cannot create surface: GhosttyApp not initialized")
+            return
+        }
+        guard surface == nil else {
+            Log.ghostty.warning("Surface already created")
+            return
+        }
+
+        var config = GhosttyApp.shared.newSurfaceConfig()
+        config.platform_tag = GHOSTTY_PLATFORM_MACOS
+        config.platform = ghostty_platform_u(
+            macos: ghostty_platform_macos_s(
+                nsview: Unmanaged.passUnretained(view).toOpaque()
+            )
+        )
+
+        let ctx = SurfaceCallbackContext(surfaceId: id, surfaceView: view, terminalSurface: self)
+        let retained = Unmanaged.passRetained(ctx)
+        self.callbackContextRef = retained
+        config.userdata = retained.toOpaque()
+
+        let scaleFactor = Double(view.window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0)
+        config.scale_factor = scaleFactor
+        config.context = GHOSTTY_SURFACE_CONTEXT_WINDOW
+
+        guard let created = ghostty_surface_new(ghosttyApp, &config) else {
+            Log.ghostty.error("ghostty_surface_new returned nil")
+            retained.release()
+            self.callbackContextRef = nil
+            return
+        }
+
+        self.surface = created
+
+        // Post-creation setup (order matters, matching cmux pattern)
+        let displayID = view.window?.screen?.displayID ?? NSScreen.main?.displayID ?? 0
+        if displayID != 0 {
+            ghostty_surface_set_display_id(created, displayID)
+        }
+
+        ghostty_surface_set_content_scale(created, scaleFactor, scaleFactor)
+
+        let backingSize = view.convertToBacking(view.bounds).size
+        if backingSize.width > 0 && backingSize.height > 0 {
+            ghostty_surface_set_size(created, UInt32(backingSize.width), UInt32(backingSize.height))
+        }
+
+        ghostty_surface_set_focus(created, true)
+
+        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        ghostty_surface_set_color_scheme(created, isDark ? GHOSTTY_COLOR_SCHEME_DARK : GHOSTTY_COLOR_SCHEME_LIGHT)
+
+        ghostty_surface_refresh(created)
+    }
+
+    // MARK: - Surface State
+
+    func setFocus(_ focused: Bool) {
+        guard let surface else { return }
+        ghostty_surface_set_focus(surface, focused)
+    }
+
+    func setSize(width: UInt32, height: UInt32) {
+        guard let surface else { return }
+        ghostty_surface_set_size(surface, width, height)
+    }
+
+    func setContentScale(x: Double, y: Double) {
+        guard let surface else { return }
+        ghostty_surface_set_content_scale(surface, x, y)
+    }
+
+    func setDisplayID(_ displayID: UInt32) {
+        guard let surface, displayID != 0 else { return }
+        ghostty_surface_set_display_id(surface, displayID)
+    }
+
+    func sendKey(_ event: ghostty_input_key_s) -> Bool {
+        guard let surface else { return false }
+        return ghostty_surface_key(surface, event)
+    }
+
+    func requestClose() {
+        guard let surface else { return }
+        ghostty_surface_request_close(surface)
+    }
+
+    // MARK: - Cleanup
+
+    func freeSurface() {
+        if let surface {
+            ghostty_surface_free(surface)
+            self.surface = nil
+        }
+        if let ref = callbackContextRef {
+            ref.release()
+            self.callbackContextRef = nil
+        }
+    }
+
+    deinit {
+        // Safety: free if not already freed
+        // Use nonisolated(unsafe) to access MainActor state in deinit
+        let surface = self.surface
+        let ref = self.callbackContextRef
+        if let surface {
+            ghostty_surface_free(surface)
+        }
+        if let ref {
+            ref.release()
+        }
+    }
+}

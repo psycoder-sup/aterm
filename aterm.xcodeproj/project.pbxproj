@@ -1,0 +1,530 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00480B683220EF013CAFB22E /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452FA3D568FD9150E0D64A60 /* Colors.swift */; };
+		826A6E59FB8CC958F2A2893F /* TerminalContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE60D02A012008C5B7C077A /* TerminalContentView.swift */; };
+		91DBC6B0CD7A01A55D9C6A20 /* TerminalWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B688BD7353CEA68D57A8BBB1 /* TerminalWindow.swift */; };
+		B7A094E67D56DF927E2DB5ED /* AtermApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003B4EB9F499098DBD761D58 /* AtermApp.swift */; };
+		B9CD36DFA0FE29A070816343 /* ANSIStripperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5F904991148280D4B79C115 /* ANSIStripperTests.swift */; };
+		DD054F519F0F20BF3134B2A6 /* PTYTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB2B60DD967DE996C51D12EB /* PTYTestHelpers.swift */; };
+		DE5252EABE963251E8A33C45 /* ANSIStripper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFD2E75DC0DB3C6EF8E3AC3F /* ANSIStripper.swift */; };
+		EF5A8041A3A3B51A8763CD79 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AB2FB9351DA3F5FC2CCBF61 /* Logger.swift */; };
+		AA0001000000000000000001 /* GhosttyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000001 /* GhosttyApp.swift */; };
+		BB0001000000000000000001 /* GhosttyTerminalSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0002000000000000000001 /* GhosttyTerminalSurface.swift */; };
+		CC0001000000000000000001 /* TerminalSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0002000000000000000001 /* TerminalSurfaceView.swift */; };
+		DD0001000000000000000001 /* GhosttyKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD0002000000000000000001 /* GhosttyKit.xcframework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9602EF48B0826616E537EE4B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C1B7C6D25ADE60160F6760E6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F2968DFD0F600E984F216EF3;
+			remoteInfo = aterm;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		003B4EB9F499098DBD761D58 /* AtermApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtermApp.swift; sourceTree = "<group>"; };
+		452FA3D568FD9150E0D64A60 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		4FE60D02A012008C5B7C077A /* TerminalContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalContentView.swift; sourceTree = "<group>"; };
+		6AB2FB9351DA3F5FC2CCBF61 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		7A9D9B4CF4EDDF461D96BCF0 /* aterm-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "aterm-Bridging-Header.h"; sourceTree = "<group>"; };
+		8B219CB73D2192C8472356C0 /* aterm.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = aterm.entitlements; sourceTree = "<group>"; };
+		A98B0F8DDAFDE2C656302EEF /* atermTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atermTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B688BD7353CEA68D57A8BBB1 /* TerminalWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalWindow.swift; sourceTree = "<group>"; };
+		CDF7F8753E641B0600CC34B9 /* aterm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = aterm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5F904991148280D4B79C115 /* ANSIStripperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ANSIStripperTests.swift; sourceTree = "<group>"; };
+		EB2B60DD967DE996C51D12EB /* PTYTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTYTestHelpers.swift; sourceTree = "<group>"; };
+		EFD2E75DC0DB3C6EF8E3AC3F /* ANSIStripper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ANSIStripper.swift; sourceTree = "<group>"; };
+		AA0002000000000000000001 /* GhosttyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhosttyApp.swift; sourceTree = "<group>"; };
+		BB0002000000000000000001 /* GhosttyTerminalSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhosttyTerminalSurface.swift; sourceTree = "<group>"; };
+		CC0002000000000000000001 /* TerminalSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSurfaceView.swift; sourceTree = "<group>"; };
+		DD0002000000000000000001 /* GhosttyKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = GhosttyKit.xcframework; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EE0001000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DD0001000000000000000001 /* GhosttyKit.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1888D8E7AEE868A8CEEDA490 /* aterm */ = {
+			isa = PBXGroup;
+			children = (
+				7A9D9B4CF4EDDF461D96BCF0 /* aterm-Bridging-Header.h */,
+				8B219CB73D2192C8472356C0 /* aterm.entitlements */,
+				D3ADFC359DEE66686252F109 /* App */,
+				EECE075F3F3844C46CC55E08 /* Core */,
+				6C4411415871C2F5695DE648 /* Utilities */,
+				FF0001000000000000000001 /* Vendor */,
+				FC75859E24B35E634AF7FF5F /* View */,
+			);
+			path = aterm;
+			sourceTree = "<group>";
+		};
+		29B1853D43339785DE006E47 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CDF7F8753E641B0600CC34B9 /* aterm.app */,
+				A98B0F8DDAFDE2C656302EEF /* atermTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6C4411415871C2F5695DE648 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				452FA3D568FD9150E0D64A60 /* Colors.swift */,
+				6AB2FB9351DA3F5FC2CCBF61 /* Logger.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		6D6A1E5FBCD6EB4DAE4F665C = {
+			isa = PBXGroup;
+			children = (
+				1888D8E7AEE868A8CEEDA490 /* aterm */,
+				B88274F90462BF7AD962469F /* atermTests */,
+				29B1853D43339785DE006E47 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B88274F90462BF7AD962469F /* atermTests */ = {
+			isa = PBXGroup;
+			children = (
+				D5F904991148280D4B79C115 /* ANSIStripperTests.swift */,
+				EB2B60DD967DE996C51D12EB /* PTYTestHelpers.swift */,
+			);
+			path = atermTests;
+			sourceTree = "<group>";
+		};
+		D3ADFC359DEE66686252F109 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				003B4EB9F499098DBD761D58 /* AtermApp.swift */,
+				B688BD7353CEA68D57A8BBB1 /* TerminalWindow.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		EECE075F3F3844C46CC55E08 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				EFD2E75DC0DB3C6EF8E3AC3F /* ANSIStripper.swift */,
+				AA0002000000000000000001 /* GhosttyApp.swift */,
+				BB0002000000000000000001 /* GhosttyTerminalSurface.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		FC75859E24B35E634AF7FF5F /* View */ = {
+			isa = PBXGroup;
+			children = (
+				4FE60D02A012008C5B7C077A /* TerminalContentView.swift */,
+				CC0002000000000000000001 /* TerminalSurfaceView.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		FF0001000000000000000001 /* Vendor */ = {
+			isa = PBXGroup;
+			children = (
+				DD0002000000000000000001 /* GhosttyKit.xcframework */,
+			);
+			path = Vendor;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		EF8FDCE83810EBF2E579BC6B /* atermTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2D67CE6831D11184E236DFDD /* Build configuration list for PBXNativeTarget "atermTests" */;
+			buildPhases = (
+				C4C04ADE89F6214646B99E49 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				97D30F60E5842054C79486FE /* PBXTargetDependency */,
+			);
+			name = atermTests;
+			packageProductDependencies = (
+			);
+			productName = atermTests;
+			productReference = A98B0F8DDAFDE2C656302EEF /* atermTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F2968DFD0F600E984F216EF3 /* aterm */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 67F01F12A06D81A220386E62 /* Build configuration list for PBXNativeTarget "aterm" */;
+			buildPhases = (
+				DB47D104030C9574D75AD295 /* Sources */,
+				EE0001000000000000000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = aterm;
+			packageProductDependencies = (
+			);
+			productName = aterm;
+			productReference = CDF7F8753E641B0600CC34B9 /* aterm.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C1B7C6D25ADE60160F6760E6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 80FB72C6B9C1583AE8925302 /* Build configuration list for PBXProject "aterm" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6D6A1E5FBCD6EB4DAE4F665C;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 29B1853D43339785DE006E47 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F2968DFD0F600E984F216EF3 /* aterm */,
+				EF8FDCE83810EBF2E579BC6B /* atermTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C4C04ADE89F6214646B99E49 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B9CD36DFA0FE29A070816343 /* ANSIStripperTests.swift in Sources */,
+				DD054F519F0F20BF3134B2A6 /* PTYTestHelpers.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB47D104030C9574D75AD295 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DE5252EABE963251E8A33C45 /* ANSIStripper.swift in Sources */,
+				B7A094E67D56DF927E2DB5ED /* AtermApp.swift in Sources */,
+				00480B683220EF013CAFB22E /* Colors.swift in Sources */,
+				AA0001000000000000000001 /* GhosttyApp.swift in Sources */,
+				BB0001000000000000000001 /* GhosttyTerminalSurface.swift in Sources */,
+				EF5A8041A3A3B51A8763CD79 /* Logger.swift in Sources */,
+				826A6E59FB8CC958F2A2893F /* TerminalContentView.swift in Sources */,
+				CC0001000000000000000001 /* TerminalSurfaceView.swift in Sources */,
+				91DBC6B0CD7A01A55D9C6A20 /* TerminalWindow.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		97D30F60E5842054C79486FE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F2968DFD0F600E984F216EF3 /* aterm */;
+			targetProxy = 9602EF48B0826616E537EE4B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		05B145201DA2F935B8D56C4B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/aterm/Vendor",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aterm.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aterm.app/Contents/MacOS/aterm";
+			};
+			name = Debug;
+		};
+		0BEC47723380F681324AD47B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/aterm/Vendor",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aterm.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aterm.app/Contents/MacOS/aterm";
+			};
+			name = Release;
+		};
+		59D9C3F5808DD2DF0777EBBA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = aterm/aterm.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/aterm/Vendor",
+				);
+				INFOPLIST_FILE = "";
+				INFOPLIST_KEY_CFBundleDisplayName = aterm;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-lc",
+					"-lc++",
+					"-framework",
+					Metal,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					IOSurface,
+					"-framework",
+					UniformTypeIdentifiers,
+					"-framework",
+					Carbon,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aterm.app;
+				PRODUCT_NAME = aterm;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "aterm/aterm-Bridging-Header.h";
+			};
+			name = Debug;
+		};
+		6A61A9B578F323983D32DA95 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		D33616643D54D0AD3915FE76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = aterm/aterm.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/aterm/Vendor",
+				);
+				INFOPLIST_FILE = "";
+				INFOPLIST_KEY_CFBundleDisplayName = aterm;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-lc",
+					"-lc++",
+					"-framework",
+					Metal,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					IOSurface,
+					"-framework",
+					UniformTypeIdentifiers,
+					"-framework",
+					Carbon,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.aterm.app;
+				PRODUCT_NAME = aterm;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "aterm/aterm-Bridging-Header.h";
+			};
+			name = Release;
+		};
+		E7CE22DEB2CD02DCAE150D27 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2D67CE6831D11184E236DFDD /* Build configuration list for PBXNativeTarget "atermTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				05B145201DA2F935B8D56C4B /* Debug */,
+				0BEC47723380F681324AD47B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		67F01F12A06D81A220386E62 /* Build configuration list for PBXNativeTarget "aterm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				59D9C3F5808DD2DF0777EBBA /* Debug */,
+				D33616643D54D0AD3915FE76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		80FB72C6B9C1583AE8925302 /* Build configuration list for PBXProject "aterm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A61A9B578F323983D32DA95 /* Debug */,
+				E7CE22DEB2CD02DCAE150D27 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C1B7C6D25ADE60160F6760E6 /* Project object */;
+}

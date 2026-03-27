@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Build libghostty-vt from source and vendor into the aterm project.
+# Build GhosttyKit.xcframework from source and vendor into the aterm project.
 #
 # Prerequisites:
 #   brew install zig
@@ -11,7 +11,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-VENDOR_DIR="$PROJECT_ROOT/aterm/Vendor/ghostty"
+VENDOR_DIR="$PROJECT_ROOT/aterm/Vendor"
 GHOSTTY_DIR="$PROJECT_ROOT/.ghostty-src"
 
 # Parse args
@@ -45,69 +45,102 @@ else
     echo "  Use --clean to re-clone, or delete manually to update."
 fi
 
-# Build libghostty-vt static library
-echo "Building libghostty-vt (this may take a few minutes)..."
-
 # macOS 26 SDK's .tbd files use arm64e only, which Zig's LLD can't handle.
 # Use the CommandLineTools SDK (macOS 15) which includes arm64 targets.
 BUILD_ENV=""
 if [ -d "/Library/Developer/CommandLineTools/SDKs" ]; then
-    # Find the newest non-26 SDK
     CLT_SDK=$(ls -d /Library/Developer/CommandLineTools/SDKs/MacOSX1*.sdk 2>/dev/null | sort -V | tail -1)
     if [ -n "$CLT_SDK" ]; then
         echo "Using SDK: $CLT_SDK (workaround for macOS 26 Zig compatibility)"
         BUILD_ENV="DEVELOPER_DIR=/Library/Developer/CommandLineTools"
+        # CLT SDK lacks metal compiler. Find it from Xcode and pass via env vars
+        # so the patched MetallibStep.zig can use it directly.
+        METAL_PATH=$(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /usr/bin/xcrun --find metal 2>/dev/null || true)
+        METALLIB_PATH=$(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /usr/bin/xcrun --find metallib 2>/dev/null || true)
+        if [ -n "$METAL_PATH" ]; then
+            echo "Metal compiler: $METAL_PATH"
+            BUILD_ENV="$BUILD_ENV GHOSTTY_METAL_PATH=$METAL_PATH"
+        fi
+        if [ -n "$METALLIB_PATH" ]; then
+            echo "Metallib tool: $METALLIB_PATH"
+            BUILD_ENV="$BUILD_ENV GHOSTTY_METALLIB_PATH=$METALLIB_PATH"
+        fi
+        # xcodebuild requires full Xcode, not CLT
+        XCODEBUILD_PATH="/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild"
+        if [ -x "$XCODEBUILD_PATH" ]; then
+            echo "Xcodebuild: $XCODEBUILD_PATH"
+            BUILD_ENV="$BUILD_ENV GHOSTTY_XCODEBUILD_PATH=$XCODEBUILD_PATH"
+        fi
     fi
 fi
 
+# Build GhosttyKit xcframework (full ghostty library with rendering, PTY, etc.)
+echo "Building GhosttyKit.xcframework (this may take several minutes)..."
 (
     cd "$GHOSTTY_DIR"
-    eval $BUILD_ENV zig build -Demit-lib-vt=true -Doptimize=ReleaseFast -Dsimd=false
+    eval $BUILD_ENV zig build \
+        -Demit-xcframework=true \
+        -Dxcframework-target=native \
+        -Doptimize=ReleaseFast
 )
 
-# Verify build output
-BUILT_LIB="$GHOSTTY_DIR/zig-out/lib/libghostty-vt.a"
-BUILT_HEADERS="$GHOSTTY_DIR/zig-out/include/ghostty"
+# Verify build output - xcframework is output to macos/ dir, not zig-out/
+BUILT_XCFW="$GHOSTTY_DIR/macos/GhosttyKit.xcframework"
+BUILT_RESOURCES="$GHOSTTY_DIR/zig-out/share/ghostty"
 
-if [ ! -f "$BUILT_LIB" ]; then
-    echo "Error: libghostty-vt.a not found at $BUILT_LIB"
-    exit 1
-fi
-
-if [ ! -d "$BUILT_HEADERS" ]; then
-    echo "Error: headers not found at $BUILT_HEADERS"
+if [ ! -d "$BUILT_XCFW" ]; then
+    echo "Error: GhosttyKit.xcframework not found at $BUILT_XCFW"
     exit 1
 fi
 
 echo "Build successful."
 
-# Repack the archive with Apple's libtool for proper 8-byte alignment.
-# Zig's ar produces archives that Apple's ld rejects.
-echo "Repacking archive for Apple linker compatibility..."
-REPACK_DIR=$(mktemp -d)
-trap "rm -rf '$REPACK_DIR'" EXIT
+# Remove old vendor artifacts
+echo "Removing old vendor artifacts..."
+rm -rf "$VENDOR_DIR/ghostty"
+rm -f "$VENDOR_DIR/ghostty.h"
+rm -rf "$VENDOR_DIR/GhosttyKit.xcframework"
 
-(
-    cd "$REPACK_DIR"
-    ar x "$BUILT_LIB"
-    chmod 644 *.o
-)
+# Copy xcframework
+echo "Copying GhosttyKit.xcframework..."
+cp -R "$BUILT_XCFW" "$VENDOR_DIR/"
 
-mkdir -p "$VENDOR_DIR/lib"
-libtool -static -o "$VENDOR_DIR/lib/libghostty-vt.a" "$REPACK_DIR"/*.o 2>/dev/null
+# Extract and copy the header file
+echo "Copying ghostty.h header..."
+# The header is inside the xcframework under Headers/
+HEADER_PATH=$(find "$BUILT_XCFW" -name "ghostty.h" -type f | head -1)
+if [ -n "$HEADER_PATH" ]; then
+    cp "$HEADER_PATH" "$VENDOR_DIR/ghostty.h"
+else
+    # Fallback: check zig-out/include
+    if [ -f "$GHOSTTY_DIR/zig-out/include/ghostty.h" ]; then
+        cp "$GHOSTTY_DIR/zig-out/include/ghostty.h" "$VENDOR_DIR/ghostty.h"
+    else
+        echo "Warning: ghostty.h not found in xcframework or zig-out/include"
+        echo "You may need to copy it manually from cmux or the ghostty project."
+    fi
+fi
 
-# Copy headers
-echo "Copying headers..."
-rm -rf "$VENDOR_DIR/include/ghostty"
-mkdir -p "$VENDOR_DIR/include"
-cp -R "$BUILT_HEADERS" "$VENDOR_DIR/include/"
+# Copy resources (shell integration, terminfo, etc.)
+if [ -d "$BUILT_RESOURCES" ]; then
+    echo "Copying ghostty resources..."
+    rm -rf "$VENDOR_DIR/resources"
+    mkdir -p "$VENDOR_DIR/resources"
+    cp -R "$BUILT_RESOURCES"/* "$VENDOR_DIR/resources/"
+else
+    echo "Warning: ghostty resources not found at $BUILT_RESOURCES"
+fi
 
 # Verify
 echo ""
 echo "Vendored artifacts:"
-echo "  Library: $VENDOR_DIR/lib/libghostty-vt.a ($(du -h "$VENDOR_DIR/lib/libghostty-vt.a" | cut -f1))"
-echo "  Headers: $VENDOR_DIR/include/ghostty/"
-ls "$VENDOR_DIR/include/ghostty/vt/" | head -5
-echo "  ... ($(ls "$VENDOR_DIR/include/ghostty/vt/" | wc -l | tr -d ' ') header files)"
+echo "  XCFramework: $VENDOR_DIR/GhosttyKit.xcframework"
+du -sh "$VENDOR_DIR/GhosttyKit.xcframework" | awk '{print "    Size: "$1}'
+if [ -f "$VENDOR_DIR/ghostty.h" ]; then
+    echo "  Header: $VENDOR_DIR/ghostty.h ($(wc -l < "$VENDOR_DIR/ghostty.h") lines)"
+fi
+if [ -d "$VENDOR_DIR/resources" ]; then
+    echo "  Resources: $VENDOR_DIR/resources/"
+fi
 echo ""
-echo "Done. Run 'xcodegen generate' to update the Xcode project."
+echo "Done."

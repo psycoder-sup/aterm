@@ -1,5 +1,16 @@
 import AppKit
 
 extension NSColor {
-    static let terminalBackground = NSColor(red: 0.1, green: 0.1, blue: 0.12, alpha: 1.0)
+    static var terminalBackground: NSColor {
+        GhosttyApp.shared.defaultBackgroundColor
+    }
+
+    convenience init(ghosttyRGB rgb: (UInt8, UInt8, UInt8)) {
+        self.init(
+            red: CGFloat(rgb.0) / 255.0,
+            green: CGFloat(rgb.1) / 255.0,
+            blue: CGFloat(rgb.2) / 255.0,
+            alpha: 1.0
+        )
+    }
 }

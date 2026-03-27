@@ -2,108 +2,13 @@ import SwiftUI
 import AppKit
 
 struct TerminalContentView: NSViewRepresentable {
-    let core: TerminalCore
+    let surface: GhosttyTerminalSurface
 
-    func makeNSView(context: Context) -> TerminalHostView {
-        TerminalHostView(core: core)
+    func makeNSView(context: Context) -> TerminalSurfaceView {
+        let view = TerminalSurfaceView()
+        view.terminalSurface = surface
+        return view
     }
 
-    func updateNSView(_ nsView: TerminalHostView, context: Context) {
-        if let snapshot = core.latestSnapshot {
-            nsView.renderSnapshot(snapshot, generation: core.snapshotGeneration)
-        }
-    }
-}
-
-final class TerminalHostView: NSView {
-    private let textView: TerminalInputTextView
-    private let scrollView: NSScrollView
-    private var lastGeneration: UInt64 = 0
-    private let font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
-
-    init(core: TerminalCore) {
-        self.scrollView = NSScrollView()
-        self.textView = TerminalInputTextView()
-
-        super.init(frame: .zero)
-
-        setupViews()
-
-        textView.onInput = { [weak core] text in
-            core?.sendInput(text)
-        }
-        textView.onKeyEvent = { [weak core] action, key, mods, text in
-            core?.sendKeyEvent(action: action, key: key, mods: mods, text: text)
-        }
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) not implemented")
-    }
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func becomeFirstResponder() -> Bool {
-        window?.makeFirstResponder(textView)
-        return true
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        window?.makeFirstResponder(textView)
-    }
-
-    func renderSnapshot(_ snapshot: GridSnapshot, generation: UInt64) {
-        guard generation != lastGeneration else { return }
-        lastGeneration = generation
-
-        let attributed = snapshot.toAttributedString(font: font)
-        textView.textStorage?.setAttributedString(attributed)
-    }
-
-    private func setupViews() {
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = false
-        scrollView.autohidesScrollers = true
-        scrollView.drawsBackground = false
-
-        textView.isEditable = false
-        textView.isSelectable = true
-        textView.isRichText = false
-        textView.backgroundColor = .terminalBackground
-        textView.textColor = .white
-        textView.font = font
-        textView.isAutomaticQuoteSubstitutionEnabled = false
-        textView.isAutomaticDashSubstitutionEnabled = false
-        textView.isAutomaticTextReplacementEnabled = false
-        textView.isAutomaticSpellingCorrectionEnabled = false
-        textView.insertionPointColor = .white
-        textView.textContainerInset = NSSize(width: 4, height: 4)
-
-        textView.minSize = NSSize(width: 0, height: 0)
-        textView.maxSize = NSSize(
-            width: CGFloat.greatestFiniteMagnitude,
-            height: CGFloat.greatestFiniteMagnitude
-        )
-        textView.isVerticallyResizable = true
-        textView.isHorizontallyResizable = false
-        textView.autoresizingMask = [.width]
-        textView.textContainer?.containerSize = NSSize(
-            width: 0,
-            height: CGFloat.greatestFiniteMagnitude
-        )
-        textView.textContainer?.widthTracksTextView = true
-
-        scrollView.documentView = textView
-        addSubview(scrollView)
-
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-    }
+    func updateNSView(_ nsView: TerminalSurfaceView, context: Context) {}
 }
