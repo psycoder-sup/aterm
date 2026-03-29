@@ -293,7 +293,10 @@ final class TerminalSurfaceView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         guard let surface = terminalSurface?.surface else { return }
-        sendMousePos(event, surface: surface)
+        // Only update position on first click to prevent cursor jump during double-click selection
+        if event.clickCount == 1 {
+            sendMousePos(event, surface: surface)
+        }
         _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_LEFT, modsFromEvent(event))
     }
 
@@ -305,6 +308,16 @@ final class TerminalSurfaceView: NSView {
 
     override func mouseDragged(with event: NSEvent) {
         guard let surface = terminalSurface?.surface else { return }
+        sendMousePos(event, surface: surface)
+    }
+
+    override func rightMouseDragged(with event: NSEvent) {
+        guard let surface = terminalSurface?.surface else { return }
+        sendMousePos(event, surface: surface)
+    }
+
+    override func otherMouseDragged(with event: NSEvent) {
+        guard event.buttonNumber == 2, let surface = terminalSurface?.surface else { return }
         sendMousePos(event, surface: surface)
     }
 
@@ -320,13 +333,20 @@ final class TerminalSurfaceView: NSView {
 
     override func rightMouseDown(with event: NSEvent) {
         guard let surface = terminalSurface?.surface else { return }
+        if !ghostty_surface_mouse_captured(surface) {
+            super.rightMouseDown(with: event)
+            return
+        }
         sendMousePos(event, surface: surface)
-        let captured = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_RIGHT, modsFromEvent(event))
-        if !captured { super.rightMouseDown(with: event) }
+        _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_RIGHT, modsFromEvent(event))
     }
 
     override func rightMouseUp(with event: NSEvent) {
         guard let surface = terminalSurface?.surface else { return }
+        if !ghostty_surface_mouse_captured(surface) {
+            super.rightMouseUp(with: event)
+            return
+        }
         _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_RIGHT, modsFromEvent(event))
     }
 
@@ -339,6 +359,12 @@ final class TerminalSurfaceView: NSView {
     override func otherMouseUp(with event: NSEvent) {
         guard event.buttonNumber == 2, let surface = terminalSurface?.surface else { return }
         _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_MIDDLE, modsFromEvent(event))
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        guard let surface = terminalSurface?.surface else { return nil }
+        if ghostty_surface_mouse_captured(surface) { return nil }
+        return super.menu(for: event)
     }
 
     override func scrollWheel(with event: NSEvent) {
@@ -358,6 +384,7 @@ final class TerminalSurfaceView: NSView {
         let momentum: Int32
         switch event.momentumPhase {
         case .began: momentum = Int32(GHOSTTY_MOUSE_MOMENTUM_BEGAN.rawValue)
+        case .stationary: momentum = Int32(GHOSTTY_MOUSE_MOMENTUM_STATIONARY.rawValue)
         case .changed: momentum = Int32(GHOSTTY_MOUSE_MOMENTUM_CHANGED.rawValue)
         case .ended: momentum = Int32(GHOSTTY_MOUSE_MOMENTUM_ENDED.rawValue)
         case .cancelled: momentum = Int32(GHOSTTY_MOUSE_MOMENTUM_CANCELLED.rawValue)
