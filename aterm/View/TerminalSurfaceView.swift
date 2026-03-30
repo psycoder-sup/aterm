@@ -1,9 +1,22 @@
 import AppKit
 
+/// Delegate for terminal surface view events that need to propagate to the view model.
+@MainActor
+protocol TerminalSurfaceViewDelegate: AnyObject {
+    func terminalSurfaceViewRequestSplit(_ view: TerminalSurfaceView, direction: SplitDirection)
+    func terminalSurfaceViewRequestClose(_ view: TerminalSurfaceView)
+    func terminalSurfaceViewDidFocus(_ view: TerminalSurfaceView)
+}
+
 /// NSView subclass hosting a CAMetalLayer for ghostty rendering.
 /// Forwards keyboard, mouse, and IME events to the ghostty surface.
 final class TerminalSurfaceView: NSView {
     weak var terminalSurface: GhosttyTerminalSurface?
+    weak var delegate: TerminalSurfaceViewDelegate?
+
+    /// Set by TerminalContentView to drive focus from the model.
+    /// Checked in viewDidMoveToWindow so focus is restored after SwiftUI view recreation.
+    var shouldBeFocused: Bool = false
 
     private var markedText = NSMutableAttributedString()
     private var keyTextAccumulator: [String]?
@@ -44,22 +57,25 @@ final class TerminalSurfaceView: NSView {
         updateSurfaceSize()
         updateTrackingAreas()
 
-        // Auto-focus: the window may not be key yet at this point,
-        // so also observe didBecomeKey to grab focus once it is.
-        window.makeFirstResponder(self)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(windowDidBecomeKey),
-            name: NSWindow.didBecomeKeyNotification,
-            object: window
-        )
+        // Restore focus after SwiftUI view recreation (container destroyed/recreated)
+        if shouldBeFocused, window.firstResponder !== self {
+            window.makeFirstResponder(self)
+        }
     }
 
-    @objc private func windowDidBecomeKey(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow else { return }
-        window.makeFirstResponder(self)
-        // Only need this once
-        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: window)
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        guard superview != nil, terminalSurface?.surface != nil else { return }
+
+        // When the view is re-parented (e.g., SwiftUI recreated the container
+        // during a tree mutation), defer a size update + refresh until after
+        // the layout pass has settled.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let surface = self.terminalSurface?.surface else { return }
+            self.updateSurfaceSize()
+            self.updateTrackingAreas()
+            ghostty_surface_refresh(surface)
+        }
     }
 
     override func viewDidChangeBackingProperties() {
@@ -103,6 +119,7 @@ final class TerminalSurfaceView: NSView {
             if let displayID = window?.screen?.displayID {
                 terminalSurface?.setDisplayID(displayID)
             }
+            delegate?.terminalSurfaceViewDidFocus(self)
         }
         return result
     }
@@ -261,15 +278,38 @@ final class TerminalSurfaceView: NSView {
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         guard event.type == .keyDown else { return false }
+        // Only the focused pane (first responder) should handle key equivalents.
+        // performKeyEquivalent is dispatched to ALL views in the hierarchy,
+        // not just the first responder — without this guard, the first pane
+        // in subview order would incorrectly handle shortcuts.
+        guard window?.firstResponder === self else { return false }
+
+        // Check split/close shortcuts before ghostty
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if let chars = event.charactersIgnoringModifiers?.lowercased() {
+            if chars == "d" && flags == [.command, .shift] {
+                delegate?.terminalSurfaceViewRequestSplit(self, direction: .horizontal)
+                return true
+            }
+            if chars == "e" && flags == [.command, .shift] {
+                delegate?.terminalSurfaceViewRequestSplit(self, direction: .vertical)
+                return true
+            }
+            if chars == "w" && flags == [.command] {
+                delegate?.terminalSurfaceViewRequestClose(self)
+                return true
+            }
+        }
+
         guard let surface = terminalSurface?.surface else { return false }
 
         // Check if this event matches a Ghostty keybinding
         var keyEvent = ghosttyKeyEvent(for: event)
         let text = textForKeyEvent(event) ?? ""
-        var flags = ghostty_binding_flags_e(0)
+        var bindingFlags = ghostty_binding_flags_e(0)
         let isBinding = text.withCString { ptr in
             keyEvent.text = ptr
-            return ghostty_surface_key_is_binding(surface, keyEvent, &flags)
+            return ghostty_surface_key_is_binding(surface, keyEvent, &bindingFlags)
         }
 
         if isBinding {
@@ -292,6 +332,10 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        // Click-to-focus: grab first responder on click
+        if let window, window.firstResponder !== self {
+            window.makeFirstResponder(self)
+        }
         guard let surface = terminalSurface?.surface else { return }
         // Only update position on first click to prevent cursor jump during double-click selection
         if event.clickCount == 1 {

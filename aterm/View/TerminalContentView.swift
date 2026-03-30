@@ -2,13 +2,84 @@ import SwiftUI
 import AppKit
 
 struct TerminalContentView: NSViewRepresentable {
-    let surface: GhosttyTerminalSurface
+    let paneID: UUID
+    let viewModel: PaneViewModel
+    let isFocused: Bool
 
-    func makeNSView(context: Context) -> TerminalSurfaceView {
-        let view = TerminalSurfaceView()
-        view.terminalSurface = surface
-        return view
+    func makeCoordinator() -> Coordinator {
+        Coordinator(paneID: paneID, viewModel: viewModel)
     }
 
-    func updateNSView(_ nsView: TerminalSurfaceView, context: Context) {}
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+
+        embedSurfaceView(in: container, coordinator: context.coordinator)
+        return container
+    }
+
+    func updateNSView(_ container: NSView, context: Context) {
+        context.coordinator.paneID = paneID
+        context.coordinator.viewModel = viewModel
+
+        // NOTE: Do NOT call embedSurfaceView here. During SwiftUI view transitions
+        // (e.g., split→leaf after close), the dying view's updateNSView can fire
+        // AFTER the new view's makeNSView, stealing the surfaceView back into the
+        // dying container. Embedding only happens in makeNSView.
+
+        guard let surfaceView = viewModel.surfaceView(for: paneID) else { return }
+
+        // Sync frame — the initial embed may have happened when the container had zero bounds.
+        if surfaceView.superview === container,
+           container.bounds.size.width > 0,
+           surfaceView.frame.size != container.bounds.size {
+            surfaceView.frame = container.bounds
+        }
+
+        // Sync focus state — viewDidMoveToWindow uses shouldBeFocused
+        // to restore first responder after SwiftUI view recreation.
+        surfaceView.shouldBeFocused = isFocused
+        if isFocused, let window = surfaceView.window, window.firstResponder !== surfaceView {
+            window.makeFirstResponder(surfaceView)
+        }
+    }
+
+    private func embedSurfaceView(in container: NSView, coordinator: Coordinator) {
+        guard let surfaceView = viewModel.surfaceView(for: paneID) else { return }
+
+        if surfaceView.superview === container {
+            return
+        }
+
+        surfaceView.removeFromSuperview()
+        surfaceView.frame = container.bounds
+        surfaceView.autoresizingMask = [.width, .height]
+        surfaceView.delegate = coordinator
+        container.addSubview(surfaceView)
+    }
+
+    // MARK: - Coordinator
+
+    @MainActor
+    final class Coordinator: TerminalSurfaceViewDelegate {
+        var paneID: UUID
+        var viewModel: PaneViewModel
+
+        init(paneID: UUID, viewModel: PaneViewModel) {
+            self.paneID = paneID
+            self.viewModel = viewModel
+        }
+
+        func terminalSurfaceViewRequestSplit(_ view: TerminalSurfaceView, direction: SplitDirection) {
+            viewModel.splitPane(direction: direction)
+        }
+
+        func terminalSurfaceViewRequestClose(_ view: TerminalSurfaceView) {
+            viewModel.closePane(paneID: paneID)
+        }
+
+        func terminalSurfaceViewDidFocus(_ view: TerminalSurfaceView) {
+            viewModel.focusPane(paneID: paneID)
+        }
+    }
 }

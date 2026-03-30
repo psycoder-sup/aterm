@@ -2,15 +2,13 @@ import SwiftUI
 
 struct TerminalWindow: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var surface: GhosttyTerminalSurface?
+    @State private var viewModel: PaneViewModel?
     @State private var errorMessage: String?
-    @State private var title: String = "aterm"
-    @State private var isClosed = false
 
     var body: some View {
         Group {
-            if let surface, !isClosed {
-                TerminalContentView(surface: surface)
+            if let viewModel {
+                SplitTreeView(node: viewModel.splitTree.root, viewModel: viewModel)
             } else if let errorMessage {
                 VStack(spacing: 12) {
                     Text("Failed to start terminal")
@@ -26,30 +24,21 @@ struct TerminalWindow: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(title)
+        .navigationTitle(viewModel?.title ?? "aterm")
         .task {
             if GhosttyApp.shared.app == nil {
                 errorMessage = "Ghostty failed to initialize"
                 return
             }
-            let newSurface = GhosttyTerminalSurface()
-            self.surface = newSurface
+            viewModel = PaneViewModel()
         }
-        .onReceive(NotificationCenter.default.publisher(for: GhosttyApp.surfaceCloseNotification)) { notification in
-            guard let surfaceId = notification.userInfo?["surfaceId"] as? UUID,
-                  surfaceId == surface?.id else { return }
-            surface?.freeSurface()
-            isClosed = true
-            dismiss()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: GhosttyApp.surfaceTitleNotification)) { notification in
-            guard let surfaceId = notification.userInfo?["surfaceId"] as? UUID,
-                  surfaceId == surface?.id,
-                  let newTitle = notification.userInfo?["title"] as? String else { return }
-            title = newTitle
+        .onChange(of: viewModel?.shouldDismiss) { _, shouldDismiss in
+            if shouldDismiss == true {
+                dismiss()
+            }
         }
         .onDisappear {
-            surface?.freeSurface()
+            viewModel?.cleanup()
         }
     }
 }

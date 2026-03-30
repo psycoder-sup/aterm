@@ -1,0 +1,149 @@
+import AppKit
+import Observation
+
+/// Central coordinator for pane splitting within a single window.
+///
+/// Owns the `SplitTree` (value-type source of truth) and a registry
+/// mapping pane UUIDs to `GhosttyTerminalSurface` instances.
+@MainActor @Observable
+final class PaneViewModel {
+    // MARK: - State
+
+    private(set) var splitTree: SplitTree
+    private(set) var surfaces: [UUID: GhosttyTerminalSurface] = [:]
+    /// Persistent NSViews keyed by pane ID. Survives SwiftUI view hierarchy changes.
+    private(set) var surfaceViews: [UUID: TerminalSurfaceView] = [:]
+
+    /// Window title from the focused pane's terminal.
+    var title: String = "aterm"
+
+    /// Set to `true` when the last pane is closed; the window should dismiss.
+    var shouldDismiss: Bool = false
+
+    // MARK: - Private
+
+    nonisolated(unsafe) private var observers: [NSObjectProtocol] = []
+
+    // MARK: - Init
+
+    init() {
+        let initialID = UUID()
+        let surface = GhosttyTerminalSurface()
+        let surfaceView = TerminalSurfaceView()
+        surfaceView.terminalSurface = surface
+        self.splitTree = SplitTree(paneID: initialID, workingDirectory: "~")
+        self.surfaces[initialID] = surface
+        self.surfaceViews[initialID] = surfaceView
+
+        // Subscribe to surface close (shell exited)
+        observers.append(NotificationCenter.default.addObserver(
+            forName: GhosttyApp.surfaceCloseNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let surfaceId = notification.userInfo?["surfaceId"] as? UUID else { return }
+            guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
+            self.closePane(paneID: paneID)
+        })
+
+        // Subscribe to surface title changes
+        observers.append(NotificationCenter.default.addObserver(
+            forName: GhosttyApp.surfaceTitleNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let surfaceId = notification.userInfo?["surfaceId"] as? UUID,
+                  let newTitle = notification.userInfo?["title"] as? String else { return }
+            if let focusedSurface = self.surfaces[self.splitTree.focusedPaneID],
+               focusedSurface.id == surfaceId {
+                self.title = newTitle
+            }
+        })
+    }
+
+    // MARK: - Lookup
+
+    func surface(for paneID: UUID) -> GhosttyTerminalSurface? {
+        surfaces[paneID]
+    }
+
+    func surfaceView(for paneID: UUID) -> TerminalSurfaceView? {
+        surfaceViews[paneID]
+    }
+
+    // MARK: - Operations
+
+    func splitPane(direction: SplitDirection) {
+        let newPaneID = UUID()
+        let newSurface = GhosttyTerminalSurface()
+        let newSurfaceView = TerminalSurfaceView()
+        newSurfaceView.terminalSurface = newSurface
+
+        // Get working directory from the focused pane's leaf node
+        let workingDirectory: String
+        if case .leaf(_, let wd) = splitTree.findLeaf(paneID: splitTree.focusedPaneID) {
+            workingDirectory = wd
+        } else {
+            workingDirectory = "~"
+        }
+
+        guard splitTree.insertSplit(
+            direction: direction,
+            newPaneID: newPaneID,
+            newWorkingDirectory: workingDirectory
+        ) else { return }
+
+        surfaces[newPaneID] = newSurface
+        surfaceViews[newPaneID] = newSurfaceView
+    }
+
+    func closePane(paneID: UUID) {
+        let result = splitTree.removeLeaf(paneID: paneID)
+        guard result != .notFound else { return }
+
+        surfaces[paneID]?.freeSurface()
+        surfaces.removeValue(forKey: paneID)
+        surfaceViews.removeValue(forKey: paneID)
+
+        if result == .lastPane {
+            shouldDismiss = true
+        }
+    }
+
+    func focusPane(paneID: UUID) {
+        guard splitTree.focusedPaneID != paneID else { return }
+        splitTree.focusedPaneID = paneID
+        // Update title from the newly focused pane
+        // (title will update on next surfaceTitleNotification from that pane)
+    }
+
+    func updateRatio(splitID: UUID, newRatio: Double) {
+        splitTree.updateRatio(splitID: splitID, newRatio: newRatio)
+    }
+
+    // MARK: - Cleanup
+
+    func cleanup() {
+        for surface in surfaces.values {
+            surface.freeSurface()
+        }
+        surfaces.removeAll()
+        surfaceViews.removeAll()
+
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        observers.removeAll()
+    }
+
+    deinit {
+        for observer in observers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    // MARK: - Private
+
+    /// Find the pane UUID that owns a surface with the given surface ID.
+    private func paneID(forSurfaceID surfaceID: UUID) -> UUID? {
+        surfaces.first(where: { $0.value.id == surfaceID })?.key
+    }
+}
