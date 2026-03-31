@@ -17,3 +17,5 @@ A native macOS terminal emulator built with SwiftUI. Uses the full ghostty embed
 ## Build
 
 Run `scripts/build-ghostty.sh` to build and vendor GhosttyKit.xcframework from the ghostty source. Requires `zig` (`brew install zig`).
+
+When using `xcodebuild`, always pass `-derivedDataPath .build` to keep build artifacts in the project directory.
