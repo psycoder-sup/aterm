@@ -78,6 +78,10 @@ struct TerminalContentView: NSViewRepresentable {
             viewModel.closePane(paneID: paneID)
         }
 
+        func terminalSurfaceViewRequestFocusDirection(_ view: TerminalSurfaceView, direction: NavigationDirection) {
+            viewModel.focusDirection(direction)
+        }
+
         func terminalSurfaceViewDidFocus(_ view: TerminalSurfaceView) {
             viewModel.focusPane(paneID: paneID)
         }

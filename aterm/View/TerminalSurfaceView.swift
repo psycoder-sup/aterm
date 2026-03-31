@@ -5,6 +5,7 @@ import AppKit
 protocol TerminalSurfaceViewDelegate: AnyObject {
     func terminalSurfaceViewRequestSplit(_ view: TerminalSurfaceView, direction: SplitDirection)
     func terminalSurfaceViewRequestClose(_ view: TerminalSurfaceView)
+    func terminalSurfaceViewRequestFocusDirection(_ view: TerminalSurfaceView, direction: NavigationDirection)
     func terminalSurfaceViewDidFocus(_ view: TerminalSurfaceView)
 }
 
@@ -297,6 +298,23 @@ final class TerminalSurfaceView: NSView {
             }
             if chars == "w" && flags == [.command] {
                 delegate?.terminalSurfaceViewRequestClose(self)
+                return true
+            }
+        }
+
+        // Cmd+Option+Arrow: directional focus navigation
+        // Arrow keys include .numericPad and .function flags, so check containment
+        if flags.contains([.command, .option]) {
+            let direction: NavigationDirection?
+            switch event.keyCode {
+            case 123: direction = .left
+            case 124: direction = .right
+            case 125: direction = .down
+            case 126: direction = .up
+            default: direction = nil
+            }
+            if let direction {
+                delegate?.terminalSurfaceViewRequestFocusDirection(self, direction: direction)
                 return true
             }
         }

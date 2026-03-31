@@ -14,6 +14,10 @@ final class PaneViewModel {
     /// Persistent NSViews keyed by pane ID. Survives SwiftUI view hierarchy changes.
     private(set) var surfaceViews: [UUID: TerminalSurfaceView] = [:]
 
+    /// The container size for the split tree view, updated from the view layer.
+    /// Used to compute pane frames for spatial navigation.
+    var containerSize: CGSize = .zero
+
     /// Window title from the focused pane's terminal.
     var title: String = "aterm"
 
@@ -113,6 +117,18 @@ final class PaneViewModel {
         splitTree.focusedPaneID = paneID
         // Update title from the newly focused pane
         // (title will update on next surfaceTitleNotification from that pane)
+    }
+
+    func focusDirection(_ direction: NavigationDirection) {
+        guard containerSize.width > 0, containerSize.height > 0 else { return }
+        let rect = CGRect(origin: .zero, size: containerSize)
+        let layoutResult = SplitLayout.layout(node: splitTree.root, in: rect)
+        guard let targetID = SplitNavigation.neighbor(
+            of: splitTree.focusedPaneID,
+            direction: direction,
+            in: layoutResult.paneFrames
+        ) else { return }
+        focusPane(paneID: targetID)
     }
 
     func updateRatio(splitID: UUID, newRatio: Double) {

@@ -9,6 +9,15 @@ struct TerminalWindow: View {
         Group {
             if let viewModel {
                 SplitTreeView(node: viewModel.splitTree.root, viewModel: viewModel)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .onAppear { viewModel.containerSize = geo.size }
+                                .onChange(of: geo.size) { _, newSize in
+                                    viewModel.containerSize = newSize
+                                }
+                        }
+                    )
             } else if let errorMessage {
                 VStack(spacing: 12) {
                     Text("Failed to start terminal")
