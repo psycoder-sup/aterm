@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -12,6 +13,9 @@ final class WorkspaceManager {
 
     /// Set to `true` when the last workspace is deleted; the app should quit.
     var shouldQuit: Bool = false
+
+    /// Window coordinator for opening/closing windows. Set by AtermAppDelegate.
+    weak var windowCoordinator: WindowCoordinator?
 
     // MARK: - Init
 
@@ -46,6 +50,7 @@ final class WorkspaceManager {
         wireWorkspaceClose(workspace)
         workspaces.append(workspace)
         activeWorkspaceID = workspace.id
+        windowCoordinator?.openWindow(for: workspace.id)
         return workspace
     }
 
@@ -65,11 +70,13 @@ final class WorkspaceManager {
         let workspace = workspaces[index]
 
         workspace.cleanup()
+        windowCoordinator?.closeWindow(for: id)
 
         workspaces.remove(at: index)
 
         if workspaces.isEmpty {
             shouldQuit = true
+            NSApplication.shared.terminate(nil)
             return
         }
 
@@ -83,6 +90,7 @@ final class WorkspaceManager {
     func switchToWorkspace(id: UUID) {
         guard workspaces.contains(where: { $0.id == id }) else { return }
         activeWorkspaceID = id
+        windowCoordinator?.bringToFront(for: id)
     }
 
     /// Reorders a workspace from one position to another.

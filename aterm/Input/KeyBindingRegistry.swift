@@ -73,6 +73,12 @@ struct KeyBindingRegistry {
         registry.bindings[.newSpace] = KeyBinding(
             characters: "t", keyCode: nil, modifiers: [.command, .shift])
 
+        // Workspace operations
+        registry.bindings[.newWorkspace] = KeyBinding(
+            characters: "n", keyCode: nil, modifiers: [.command, .shift])
+        registry.bindings[.closeWorkspace] = KeyBinding(
+            characters: nil, keyCode: 51, modifiers: [.command, .shift])  // 51 = backspace
+
         return registry
     }
 }
