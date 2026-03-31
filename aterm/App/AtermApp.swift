@@ -1,8 +1,16 @@
+import AppKit
 import SwiftUI
 
 class AtermAppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
+    }
+
+    func applicationDidUpdate(_ notification: Notification) {
+        for window in NSApplication.shared.windows where !window.titlebarAppearsTransparent {
+            window.titlebarAppearsTransparent = true
+            window.backgroundColor = .terminalBackground
+        }
     }
 }
 

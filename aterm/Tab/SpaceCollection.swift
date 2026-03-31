@@ -1,0 +1,121 @@
+import Foundation
+import Observation
+
+/// Owns the ordered list of spaces. Singleton in M3; per-workspace in M4.
+@MainActor @Observable
+final class SpaceCollection {
+    private(set) var spaces: [SpaceModel]
+    var activeSpaceID: UUID
+
+    /// Set to `true` when the last space is closed; the app should quit.
+    var shouldQuit: Bool = false
+
+    private var spaceCounter: Int = 1
+
+    init() {
+        let initialTab = TabModel(name: "Tab 1")
+        let initialSpace = SpaceModel(name: "default", initialTab: initialTab)
+        self.spaces = [initialSpace]
+        self.activeSpaceID = initialSpace.id
+
+        wireSpaceClose(initialSpace)
+    }
+
+    // MARK: - Computed
+
+    var activeSpace: SpaceModel? {
+        spaces.first(where: { $0.id == activeSpaceID })
+    }
+
+    // MARK: - Space Operations
+
+    func createSpace(workingDirectory: String = "~") {
+        spaceCounter += 1
+        let tab = TabModel(name: "Tab 1", workingDirectory: workingDirectory)
+        let space = SpaceModel(name: "Space \(spaceCounter)", initialTab: tab)
+        wireSpaceClose(space)
+        spaces.append(space)
+        activeSpaceID = space.id
+    }
+
+    func removeSpace(id: UUID) {
+        guard let index = spaces.firstIndex(where: { $0.id == id }) else { return }
+        let space = spaces[index]
+        // Cleanup all tabs in the space
+        for tab in space.tabs {
+            tab.cleanup()
+        }
+        spaces.remove(at: index)
+
+        if spaces.isEmpty {
+            shouldQuit = true
+            return
+        }
+
+        // If we removed the active space, activate nearest (prefer left, else right)
+        if activeSpaceID == id {
+            let newIndex = index > 0 ? index - 1 : 0
+            activeSpaceID = spaces[newIndex].id
+        }
+    }
+
+    func activateSpace(id: UUID) {
+        guard spaces.contains(where: { $0.id == id }) else { return }
+        activeSpaceID = id
+    }
+
+    // MARK: - Navigation
+
+    func nextSpace() {
+        guard let currentIndex = spaces.firstIndex(where: { $0.id == activeSpaceID }) else { return }
+        let nextIndex = (currentIndex + 1) % spaces.count
+        activeSpaceID = spaces[nextIndex].id
+    }
+
+    func previousSpace() {
+        guard let currentIndex = spaces.firstIndex(where: { $0.id == activeSpaceID }) else { return }
+        let prevIndex = (currentIndex - 1 + spaces.count) % spaces.count
+        activeSpaceID = spaces[prevIndex].id
+    }
+
+    // MARK: - Reorder
+
+    func reorderSpace(from sourceIndex: Int, to destinationIndex: Int) {
+        guard sourceIndex != destinationIndex,
+              sourceIndex >= 0, sourceIndex < spaces.count,
+              destinationIndex >= 0, destinationIndex < spaces.count else { return }
+        let space = spaces.remove(at: sourceIndex)
+        spaces.insert(space, at: destinationIndex)
+    }
+
+    // MARK: - Working Directory
+
+    /// Resolves the working directory from the active pane of the active tab of the active space.
+    func resolveWorkingDirectory() -> String {
+        guard let space = activeSpace,
+              let tab = space.activeTab else {
+            return ProcessInfo.processInfo.environment["HOME"] ?? "~"
+        }
+        let pvm = tab.paneViewModel
+        let focusedID = pvm.splitTree.focusedPaneID
+        if let surface = pvm.surface(for: focusedID)?.surface {
+            let inherited = ghostty_surface_inherited_config(surface, GHOSTTY_SURFACE_CONTEXT_WINDOW)
+            if let wdPtr = inherited.working_directory {
+                return String(cString: wdPtr)
+            }
+        }
+        if case .leaf(_, let wd) = pvm.splitTree.findLeaf(paneID: focusedID),
+           !wd.isEmpty, wd != "~" {
+            return wd
+        }
+        return ProcessInfo.processInfo.environment["HOME"] ?? "~"
+    }
+
+    // MARK: - Private
+
+    private func wireSpaceClose(_ space: SpaceModel) {
+        space.onEmpty = { [weak self, spaceID = space.id] in
+            self?.removeSpace(id: spaceID)
+        }
+    }
+}

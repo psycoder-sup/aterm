@@ -24,18 +24,22 @@ final class PaneViewModel {
     /// Set to `true` when the last pane is closed; the window should dismiss.
     var shouldDismiss: Bool = false
 
+    /// Called when the last pane is closed. Used by TabModel to trigger cascading close.
+    var onEmpty: (() -> Void)?
+
     // MARK: - Private
 
     nonisolated(unsafe) private var observers: [NSObjectProtocol] = []
 
     // MARK: - Init
 
-    init() {
+    init(workingDirectory: String = "~") {
         let initialID = UUID()
         let surface = GhosttyTerminalSurface()
         let surfaceView = TerminalSurfaceView()
         surfaceView.terminalSurface = surface
-        self.splitTree = SplitTree(paneID: initialID, workingDirectory: "~")
+        surfaceView.initialWorkingDirectory = workingDirectory
+        self.splitTree = SplitTree(paneID: initialID, workingDirectory: workingDirectory)
         self.surfaces[initialID] = surface
         self.surfaceViews[initialID] = surfaceView
 
@@ -116,7 +120,11 @@ final class PaneViewModel {
         surfaceViews.removeValue(forKey: paneID)
 
         if result == .lastPane {
-            shouldDismiss = true
+            if let onEmpty {
+                onEmpty()
+            } else {
+                shouldDismiss = true
+            }
         }
     }
 
