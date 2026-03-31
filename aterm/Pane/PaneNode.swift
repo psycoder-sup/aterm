@@ -121,6 +121,20 @@ extension PaneNode {
         }
     }
 
+    /// Returns a new tree with the leaf's working directory updated.
+    func updatingWorkingDirectory(paneID: UUID, newWorkingDirectory: String) -> PaneNode {
+        switch self {
+        case .leaf(let id, _):
+            return id == paneID ? .leaf(paneID: id, workingDirectory: newWorkingDirectory) : self
+        case .split(let id, let direction, let ratio, let first, let second):
+            return .split(
+                id: id, direction: direction, ratio: ratio,
+                first: first.updatingWorkingDirectory(paneID: paneID, newWorkingDirectory: newWorkingDirectory),
+                second: second.updatingWorkingDirectory(paneID: paneID, newWorkingDirectory: newWorkingDirectory)
+            )
+        }
+    }
+
     /// Returns a new tree with the split node's ratio updated.
     func updatingRatio(splitID: UUID, newRatio: Double) -> PaneNode {
         switch self {

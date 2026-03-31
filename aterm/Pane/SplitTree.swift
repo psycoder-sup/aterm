@@ -100,6 +100,11 @@ extension SplitTree {
         return .removed(newFocusID: focusedPaneID)
     }
 
+    /// Update the working directory of a leaf pane.
+    mutating func updateWorkingDirectory(paneID: UUID, newWorkingDirectory: String) {
+        root = root.updatingWorkingDirectory(paneID: paneID, newWorkingDirectory: newWorkingDirectory)
+    }
+
     /// Update the ratio of a split node, clamped to 0.1...0.9.
     mutating func updateRatio(splitID: UUID, newRatio: Double) {
         let clamped = min(max(newRatio, 0.1), 0.9)

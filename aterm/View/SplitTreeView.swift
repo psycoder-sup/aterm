@@ -9,6 +9,7 @@ struct SplitTreeView: View {
         switch node {
         case .leaf(let paneID, _):
             PaneView(paneID: paneID, viewModel: viewModel)
+                .id(paneID)
 
         case .split(let id, let direction, let ratio, let first, let second):
             SplitContainerView(
@@ -21,6 +22,7 @@ struct SplitTreeView: View {
             } second: {
                 SplitTreeView(node: second, viewModel: viewModel)
             }
+            .id(id)
         }
     }
 }

@@ -19,6 +19,9 @@ final class TerminalSurfaceView: NSView {
     /// Checked in viewDidMoveToWindow so focus is restored after SwiftUI view recreation.
     var shouldBeFocused: Bool = false
 
+    /// Initial working directory for the shell, set before the view enters a window.
+    var initialWorkingDirectory: String?
+
     private var markedText = NSMutableAttributedString()
     private var keyTextAccumulator: [String]?
     private var trackingArea: NSTrackingArea?
@@ -52,7 +55,7 @@ final class TerminalSurfaceView: NSView {
 
         // Create surface when view is attached to a window
         if let terminalSurface, terminalSurface.surface == nil {
-            terminalSurface.createSurface(view: self)
+            terminalSurface.createSurface(view: self, workingDirectory: initialWorkingDirectory)
         }
 
         updateSurfaceSize()

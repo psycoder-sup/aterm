@@ -20,6 +20,10 @@ final class GhosttyApp: @unchecked Sendable {
     /// userInfo contains "surfaceId" (UUID) and "title" (String).
     static let surfaceTitleNotification = Notification.Name("GhosttyApp.surfaceTitle")
 
+    /// Posted when a surface's working directory changes (OSC 7).
+    /// userInfo contains "surfaceId" (UUID) and "pwd" (String).
+    static let surfacePwdNotification = Notification.Name("GhosttyApp.surfacePwd")
+
     // MARK: - Initialization
 
     private init() {
@@ -267,6 +271,17 @@ final class GhosttyApp: @unchecked Sendable {
             return true
 
         case GHOSTTY_ACTION_PWD:
+            if let pwdPtr = action.action.pwd.pwd {
+                let pwd = String(cString: pwdPtr)
+                let surfaceId = ctx.surfaceId
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: GhosttyApp.surfacePwdNotification,
+                        object: nil,
+                        userInfo: ["surfaceId": surfaceId, "pwd": pwd]
+                    )
+                }
+            }
             return true
 
         case GHOSTTY_ACTION_DESKTOP_NOTIFICATION:

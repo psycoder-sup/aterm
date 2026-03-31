@@ -61,6 +61,17 @@ final class PaneViewModel {
                 self.title = newTitle
             }
         })
+
+        // Subscribe to surface working directory changes (OSC 7)
+        observers.append(NotificationCenter.default.addObserver(
+            forName: GhosttyApp.surfacePwdNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let surfaceId = notification.userInfo?["surfaceId"] as? UUID,
+                  let pwd = notification.userInfo?["pwd"] as? String else { return }
+            guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
+            self.splitTree.updateWorkingDirectory(paneID: paneID, newWorkingDirectory: pwd)
+        })
     }
 
     // MARK: - Lookup
@@ -81,13 +92,9 @@ final class PaneViewModel {
         let newSurfaceView = TerminalSurfaceView()
         newSurfaceView.terminalSurface = newSurface
 
-        // Get working directory from the focused pane's leaf node
-        let workingDirectory: String
-        if case .leaf(_, let wd) = splitTree.findLeaf(paneID: splitTree.focusedPaneID) {
-            workingDirectory = wd
-        } else {
-            workingDirectory = "~"
-        }
+        let workingDirectory = resolveWorkingDirectory(for: splitTree.focusedPaneID)
+
+        newSurfaceView.initialWorkingDirectory = workingDirectory
 
         guard splitTree.insertSplit(
             direction: direction,
@@ -105,6 +112,7 @@ final class PaneViewModel {
 
         surfaces[paneID]?.freeSurface()
         surfaces.removeValue(forKey: paneID)
+        surfaceViews[paneID]?.removeFromSuperview()
         surfaceViews.removeValue(forKey: paneID)
 
         if result == .lastPane {
@@ -157,6 +165,24 @@ final class PaneViewModel {
     }
 
     // MARK: - Private
+
+    /// Resolve working directory for a pane: inherited config (OSC 7) -> tree -> $HOME.
+    private func resolveWorkingDirectory(for paneID: UUID) -> String {
+        if let surface = surfaces[paneID]?.surface {
+            // working_directory is zig-allocated; C API has no free function (same in Ghostty's own app)
+            let inherited = ghostty_surface_inherited_config(surface, GHOSTTY_SURFACE_CONTEXT_SPLIT)
+            if let wdPtr = inherited.working_directory {
+                return String(cString: wdPtr)
+            }
+        }
+
+        if case .leaf(_, let wd) = splitTree.findLeaf(paneID: paneID),
+           !wd.isEmpty, wd != "~" {
+            return wd
+        }
+
+        return ProcessInfo.processInfo.environment["HOME"] ?? "~"
+    }
 
     /// Find the pane UUID that owns a surface with the given surface ID.
     private func paneID(forSurfaceID surfaceID: UUID) -> UUID? {

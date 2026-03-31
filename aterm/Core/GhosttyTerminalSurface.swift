@@ -13,7 +13,10 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
 
     /// Create the ghostty surface and bind it to the given view.
     /// Must be called after the view is in a window.
-    func createSurface(view: TerminalSurfaceView) {
+    /// - Parameters:
+    ///   - view: The NSView that hosts the surface.
+    ///   - workingDirectory: Optional initial working directory for the shell.
+    func createSurface(view: TerminalSurfaceView, workingDirectory: String? = nil) {
         guard let ghosttyApp = GhosttyApp.shared.app else {
             Log.ghostty.error("Cannot create surface: GhosttyApp not initialized")
             return
@@ -40,7 +43,13 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
         config.scale_factor = scaleFactor
         config.context = GHOSTTY_SURFACE_CONTEXT_WINDOW
 
-        guard let created = ghostty_surface_new(ghosttyApp, &config) else {
+        // Create surface inside withCString so the working_directory pointer stays alive
+        let created: ghostty_surface_t? = workingDirectory.withCString { cWd in
+            config.working_directory = cWd
+            return ghostty_surface_new(ghosttyApp, &config)
+        }
+
+        guard let created else {
             Log.ghostty.error("ghostty_surface_new returned nil")
             retained.release()
             self.callbackContextRef = nil
@@ -125,6 +134,19 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
         }
         if let ref {
             ref.release()
+        }
+    }
+}
+
+// MARK: - Optional String C String Helper
+
+extension Optional where Wrapped == String {
+    /// Calls `body` with a C string pointer for `.some`, or `nil` for `.none`.
+    func withCString<T>(_ body: (UnsafePointer<Int8>?) throws -> T) rethrows -> T {
+        if let string = self {
+            return try string.withCString(body)
+        } else {
+            return try body(nil)
         }
     }
 }

@@ -266,6 +266,43 @@ struct SplitTreeTests {
         #expect(tree == treeBefore)
     }
 
+    // MARK: - Update Working Directory
+
+    @Test func updateWorkingDirectoryUpdatesCorrectLeaf() {
+        let a = UUID()
+        var tree = SplitTree(paneID: a, workingDirectory: "~")
+        let b = UUID()
+        tree.insertSplit(direction: .horizontal, newPaneID: b, newWorkingDirectory: "~")
+
+        tree.updateWorkingDirectory(paneID: a, newWorkingDirectory: "/tmp")
+
+        #expect(tree.findLeaf(paneID: a) == .leaf(paneID: a, workingDirectory: "/tmp"))
+        #expect(tree.findLeaf(paneID: b) == .leaf(paneID: b, workingDirectory: "~"))
+    }
+
+    @Test func updateWorkingDirectoryNoOpForNonExistentPane() {
+        let a = UUID()
+        var tree = SplitTree(paneID: a, workingDirectory: "/home")
+
+        let treeBefore = tree
+        tree.updateWorkingDirectory(paneID: UUID(), newWorkingDirectory: "/tmp")
+        #expect(tree == treeBefore)
+    }
+
+    @Test func updateWorkingDirectoryPreservedAcrossSplit() {
+        let a = UUID()
+        var tree = SplitTree(paneID: a, workingDirectory: "~")
+
+        // Update a's wd, then split from a
+        tree.updateWorkingDirectory(paneID: a, newWorkingDirectory: "/var")
+        tree.focusedPaneID = a
+        let b = UUID()
+        tree.insertSplit(direction: .horizontal, newPaneID: b, newWorkingDirectory: "/var")
+
+        #expect(tree.findLeaf(paneID: a) == .leaf(paneID: a, workingDirectory: "/var"))
+        #expect(tree.findLeaf(paneID: b) == .leaf(paneID: b, workingDirectory: "/var"))
+    }
+
     // MARK: - Find Leaf
 
     @Test func findExistingLeaf() {
