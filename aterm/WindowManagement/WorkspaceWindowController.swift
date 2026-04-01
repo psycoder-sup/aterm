@@ -21,12 +21,13 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = workspace.name
         window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
         window.backgroundColor = .terminalBackground
         window.setFrameAutosaveName("workspace-\(workspace.id.uuidString)")
         window.center()
@@ -41,6 +42,7 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
         super.init(window: window)
         window.delegate = self
 
+        installTrafficLightAligner(window: window)
         observeNameChanges(workspace: workspace)
         installKeyboardMonitor(workspace: workspace)
     }
@@ -48,6 +50,14 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) not supported")
+    }
+
+    // MARK: - Traffic Lights
+
+    private var trafficLightAligner: TrafficLightAligner?
+
+    private func installTrafficLightAligner(window: NSWindow) {
+        trafficLightAligner = TrafficLightAligner(window: window, targetHeight: 44)
     }
 
     // MARK: - Name Observation
@@ -80,10 +90,10 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
             }
 
             // Don't consume shortcuts when a text field is focused,
-            // except for workspace-level actions that should always work.
+            // except for workspace/sidebar-level actions that should always work.
             if let responder = event.window?.firstResponder, responder is NSText {
                 switch action {
-                case .toggleWorkspaceSwitcher:
+                case .toggleSidebar, .focusSidebar:
                     break  // allow through
                 default:
                     return event
@@ -117,18 +127,30 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
                 self.workspaceManager?.deleteWorkspace(id: self.workspaceID)
                 return nil
             case .toggleWorkspaceSwitcher:
+                // Legacy: no binding maps here; kept for compilation (Phase 5 removes)
+                return nil
+            case .toggleSidebar:
+                self.handleSidebarToggle()
+                return nil
+            case .focusSidebar:
                 NotificationCenter.default.post(
-                    name: .toggleWorkspaceSwitcher,
+                    name: .focusSidebar,
                     object: self.workspaceID
                 )
                 return nil
             }
 
-            // Sync container size to the newly active tab
-            collection.activeSpace?.activeTab?.paneViewModel.containerSize =
-                self.window?.contentView?.frame.size ?? .zero
             return nil
         }
+    }
+
+    // MARK: - Sidebar
+
+    private func handleSidebarToggle() {
+        NotificationCenter.default.post(
+            name: .toggleSidebar,
+            object: self.workspaceID
+        )
     }
 
     private func removeKeyboardMonitor() {
@@ -149,6 +171,7 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        trafficLightAligner?.tearDown()
         removeKeyboardMonitor()
         windowCoordinator?.removeController(for: workspaceID)
     }

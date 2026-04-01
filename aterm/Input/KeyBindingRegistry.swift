@@ -30,22 +30,26 @@ struct KeyBinding: Equatable {
 }
 
 struct KeyBindingRegistry {
-    private var bindings: [KeyAction: KeyBinding] = [:]
+    private var bindings: [KeyAction: [KeyBinding]] = [:]
 
     static let shared = KeyBindingRegistry.defaults()
 
     /// Look up which action an event maps to, if any.
     func action(for event: NSEvent) -> KeyAction? {
-        // Check Cmd+1..9 first (special case: multiple actions share similar modifiers)
-        if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == [.command],
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+        // Check Cmd+digit (special case: multiple actions share similar modifiers)
+        if flags == [.command],
            let chars = event.charactersIgnoringModifiers,
-           let digit = Int(chars), digit >= 1, digit <= 9 {
-            return .goToTab(digit)
+           let digit = Int(chars), digit >= 0, digit <= 9 {
+            return digit == 0 ? .focusSidebar : .goToTab(digit)
         }
 
-        for (action, binding) in bindings {
-            if binding.matches(event: event) {
-                return action
+        for (action, actionBindings) in bindings {
+            for binding in actionBindings {
+                if binding.matches(event: event) {
+                    return action
+                }
             }
         }
         return nil
@@ -57,29 +61,33 @@ struct KeyBindingRegistry {
         var registry = KeyBindingRegistry()
 
         // Tab navigation
-        registry.bindings[.nextTab] = KeyBinding(
-            characters: "]", keyCode: nil, modifiers: [.command, .shift])
-        registry.bindings[.previousTab] = KeyBinding(
-            characters: "[", keyCode: nil, modifiers: [.command, .shift])
-        registry.bindings[.newTab] = KeyBinding(
-            characters: "t", keyCode: nil, modifiers: [.command])
+        registry.bindings[.nextTab] = [KeyBinding(
+            characters: "]", keyCode: nil, modifiers: [.command, .shift])]
+        registry.bindings[.previousTab] = [KeyBinding(
+            characters: "[", keyCode: nil, modifiers: [.command, .shift])]
+        registry.bindings[.newTab] = [KeyBinding(
+            characters: "t", keyCode: nil, modifiers: [.command])]
 
         // Space navigation
         // Cmd+Shift+Right (keyCode 124) / Cmd+Shift+Left (keyCode 123)
-        registry.bindings[.nextSpace] = KeyBinding(
-            characters: nil, keyCode: 124, modifiers: [.command, .shift])
-        registry.bindings[.previousSpace] = KeyBinding(
-            characters: nil, keyCode: 123, modifiers: [.command, .shift])
-        registry.bindings[.newSpace] = KeyBinding(
-            characters: "t", keyCode: nil, modifiers: [.command, .shift])
+        registry.bindings[.nextSpace] = [KeyBinding(
+            characters: nil, keyCode: 124, modifiers: [.command, .shift])]
+        registry.bindings[.previousSpace] = [KeyBinding(
+            characters: nil, keyCode: 123, modifiers: [.command, .shift])]
+        registry.bindings[.newSpace] = [KeyBinding(
+            characters: "t", keyCode: nil, modifiers: [.command, .shift])]
 
         // Workspace operations
-        registry.bindings[.newWorkspace] = KeyBinding(
-            characters: "n", keyCode: nil, modifiers: [.command, .shift])
-        registry.bindings[.closeWorkspace] = KeyBinding(
-            characters: nil, keyCode: 51, modifiers: [.command, .shift])  // 51 = backspace
-        registry.bindings[.toggleWorkspaceSwitcher] = KeyBinding(
-            characters: "w", keyCode: nil, modifiers: [.command, .shift])
+        registry.bindings[.newWorkspace] = [KeyBinding(
+            characters: "n", keyCode: nil, modifiers: [.command, .shift])]
+        registry.bindings[.closeWorkspace] = [KeyBinding(
+            characters: nil, keyCode: 51, modifiers: [.command, .shift])]  // 51 = backspace
+
+        // Sidebar
+        registry.bindings[.toggleSidebar] = [
+            KeyBinding(characters: "s", keyCode: nil, modifiers: [.command, .shift]),
+            KeyBinding(characters: "w", keyCode: nil, modifiers: [.command, .shift]),
+        ]
 
         return registry
     }

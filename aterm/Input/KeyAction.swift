@@ -18,4 +18,8 @@ enum KeyAction: Hashable {
     case newWorkspace
     case closeWorkspace
     case toggleWorkspaceSwitcher
+
+    // Sidebar
+    case toggleSidebar
+    case focusSidebar
 }
