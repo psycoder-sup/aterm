@@ -18,4 +18,6 @@ A native macOS terminal emulator built with SwiftUI. Uses the full ghostty embed
 
 Run `scripts/build-ghostty.sh` to build and vendor GhosttyKit.xcframework from the ghostty source. Requires `zig` (`brew install zig`).
 
+The Xcode project is generated via **XcodeGen** (`project.yml`). After adding, removing, or renaming source files, run `xcodegen generate` to regenerate `aterm.xcodeproj`. Never edit `project.pbxproj` manually.
+
 When using `xcodebuild`, always pass `-derivedDataPath .build` to keep build artifacts in the project directory.

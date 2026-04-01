@@ -12,6 +12,8 @@ Workspace model: Workspace = project, Space = branch/worktree, Tab = standard ta
 
 v1 bar: full workspace/space/tab/pane model working + persistent sessions + fast GPU rendering. Must be daily-drivable before shipping.
 
+Current navigation state (as of M4): horizontal WorkspaceIndicatorView + SpaceBarView + TabBarView + modal WorkspaceSwitcherOverlay. Workspace sidebar redesign PRD v1.1 (Review status, 2026-04-01) at docs/feature/workspace-sidebar/workspace-sidebar-prd.md. Key decisions: each window's sidebar shows only its own workspace (no cross-window tree), fuzzy search overlay removed without sidebar search replacement (window switching is the cross-workspace mechanism), Cmd+Shift+W repurposed as sidebar toggle, focus returns to terminal after sidebar interactions, "Set Default Working Directory" deferred to post-v1 (WORK-261).
+
 **Why:** Ghostty lacks workspace/space concepts, has limited customizability, and no session persistence. Developer wants native macOS integration to replace tmux-style workflows.
 
 **How to apply:** All feature planning should respect: macOS-only, keyboard-driven, no plugin system in v1, no telemetry. PRD lives at docs/feature/aterm/aterm-prd.md. Doc structure: docs/feature/[feature-name]/[feature-name]-prd.md.

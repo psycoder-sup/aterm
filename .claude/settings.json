@@ -8,5 +8,8 @@
       "Bash(xcodebuild build -scheme aterm:*)",
       "Bash(xcodebuild -project aterm.xcodeproj:*)"
     ]
+  },
+  "enabledPlugins": {
+    "figma@claude-plugins-official": true
   }
 }

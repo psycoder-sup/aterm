@@ -1,21 +1,15 @@
 ---
 name: aterm project state
-description: Current state of aterm project - M1 code exists, migrating from libghostty-vt to full ghostty app/surface API (WORK-276).
+description: Current state of aterm project - M4 workspace features implemented, workspace sidebar redesign spec written.
 type: project
 ---
 
-As of 2026-03-26, aterm has working M1 code: a single-window terminal with custom Metal rendering, PTY management, and libghostty-vt bridge. 18 Swift source files exist across App/, Core/, Bridge/, Renderer/, View/, Utilities/ directories.
+As of 2026-04-01, aterm has working code through M4 (workspaces). 39 Swift source files across App/, Core/, DragAndDrop/, Input/, Models/, Pane/, Tab/, Utilities/, View/, WindowManagement/ directories. The full ghostty app/surface API migration (WORK-276) is complete.
 
-**Major architectural change in progress (WORK-276):** Migrating from libghostty-vt (low-level VT parsing only) + custom Metal rendering to the full ghostty app/surface API. This replaces ~14 files (PTY, renderer, bridge, font atlas, shaders) with a thin wrapper around ghostty_app_t/ghostty_surface_t. Ghostty handles PTY, VT parsing, Metal rendering, font atlas, cursor, selection, scrollback, and themes internally.
+**Current architecture:** SwiftUI app with NSWindow per workspace. WorkspaceWindowController manages windows with NSEvent keyboard monitor for shortcuts. WorkspaceWindowContent is the main SwiftUI view per window. GhosttyTerminalSurface wraps ghostty_surface_t for terminal rendering. Observable models: WorkspaceManager -> Workspace -> SpaceCollection -> SpaceModel -> TabModel -> PaneViewModel -> SplitTree.
 
-Migration spec written: docs/spec/WORK-276-ghostty-migration.md
+**Workspace sidebar redesign spec written:** docs/feature/workspace-sidebar/workspace-sidebar-spec.md. Replaces WorkspaceIndicatorView + SpaceBarView + WorkspaceSwitcherOverlay with a glassmorphism sidebar. 5 implementation phases. Key technical decisions: per-window SidebarState, terminal surface freeze during toggle animation, multi-binding KeyBindingRegistry, push layout with .ultraThinMaterial.
 
-Key facts:
-- .ghostty-src directory contains a shallow clone of Ghostty source (for building libghostty)
-- cmux at /tmp/cmux is the reference implementation for the ghostty app/surface API
-- cmux uses GhosttyKit.xcframework for linking
-- ghostty.h (single header) replaces the ghostty/vt.h header tree
+**Why:** The sidebar consolidates three navigation surfaces into one persistent tree view.
 
-**Why:** The full ghostty API dramatically simplifies the codebase and provides production-grade rendering quality.
-
-**How to apply:** All future M1 work should target the post-migration architecture (ghostty app/surface API, not libghostty-vt).
+**How to apply:** Future work on navigation should reference the sidebar spec. The sidebar is a view-layer-only change with no data model modifications.

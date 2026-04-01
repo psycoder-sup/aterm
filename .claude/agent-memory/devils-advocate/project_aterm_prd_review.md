@@ -1,11 +1,23 @@
 ---
 name: aterm PRD review status
-description: Status and key findings from devil's advocate reviews of aterm PRD (v1.0 scored 0.68, v1.1 scored 0.82, v1.3 scored 0.87)
+description: Status and key findings from devil's advocate reviews of aterm PRDs (workspace-sidebar v1.1 scored 0.93, implementation-ready)
 type: project
 ---
 
-Reviewed aterm PRD v1.3 on 2026-03-24. Score: 0.87/1.0 (up from 0.82 on v1.1, 0.68 on v1.0).
+## Workspace Sidebar PRD
 
-**Why:** v1.1 majors were resolved (persistence location, quit race condition, OQ#6 fresh shell). Two new Major concerns: (1) OQ#10 persistence format still unresolved but FR-23 already uses JSON-like notation (internal inconsistency); (2) OQ#3 pane limit still TBD with no due date -- unlimited recursive splits with no resource exhaustion handling. Minor issues: serialization failure path unspecified in FR-23, FR-43 keyboard resize interaction model vague, FR-01/FR-02 missing "reorder" despite User Story 10 requiring it, profile inheritance visibility unspecified, macOS 26 rationale doesn't name specific APIs.
+Reviewed workspace-sidebar PRD v1.1 on 2026-04-01. Score: 0.93/1.0 (up from 0.70 on v1.0).
 
-**How to apply:** PRD is implementation-ready through M4. Major items must resolve before M2 (pane limits) and M5 (persistence format). If v1.4 review requested, verify OQ#10 is closed, OQ#3 has a due date, and FR-23 has a serialization failure clause.
+**Why:** All 11 issues from v1.0 review were substantively fixed. Focus management (FR-23-27) went from weakest to strongest area. Cross-window scope decision is explicit and well-reasoned.
+
+**Remaining minor items (none blocking):**
+1. OQ#1 (global vs per-window sidebar state) should be resolved as a decision before Phase 1
+2. Full-screen glassmorphism behavior needs a one-liner (material blurs nothing meaningful in full-screen)
+3. Phase ordering: Phase 4 (icon rail) arguably higher priority than Phase 3 (context menus/DnD)
+4. Post-v1 should distinguish "sidebar search" from "cross-workspace fuzzy switcher" as separate capabilities
+
+**How to apply:** PRD is implementation-ready. If v1.2 review requested, verify OQ#1 is resolved and the minor items above are addressed.
+
+## Prior PRD (aterm main PRD, unrelated)
+
+Reviewed aterm PRD v1.3 on 2026-03-24. Score: 0.87/1.0. See git history for details.
