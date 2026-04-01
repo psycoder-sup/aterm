@@ -79,9 +79,15 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
                 return event
             }
 
-            // Don't consume shortcuts when a text field is focused
+            // Don't consume shortcuts when a text field is focused,
+            // except for workspace-level actions that should always work.
             if let responder = event.window?.firstResponder, responder is NSText {
-                return event
+                switch action {
+                case .toggleWorkspaceSwitcher:
+                    break  // allow through
+                default:
+                    return event
+                }
             }
 
             switch action {
@@ -109,6 +115,12 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
                 return nil
             case .closeWorkspace:
                 self.workspaceManager?.deleteWorkspace(id: self.workspaceID)
+                return nil
+            case .toggleWorkspaceSwitcher:
+                NotificationCenter.default.post(
+                    name: .toggleWorkspaceSwitcher,
+                    object: self.workspaceID
+                )
                 return nil
             }
 

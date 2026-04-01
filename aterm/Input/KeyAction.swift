@@ -17,4 +17,5 @@ enum KeyAction: Hashable {
     // Workspace operations
     case newWorkspace
     case closeWorkspace
+    case toggleWorkspaceSwitcher
 }

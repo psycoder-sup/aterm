@@ -1,10 +1,15 @@
 import SwiftUI
 
+extension Notification.Name {
+    static let toggleWorkspaceSwitcher = Notification.Name("toggleWorkspaceSwitcher")
+}
+
 struct WorkspaceWindowContent: View {
     let workspaceID: UUID
     @Environment(WorkspaceManager.self) private var workspaceManager
 
     @State private var lastContainerSize: CGSize = .zero
+    @State private var showWorkspaceSwitcher = false
 
     private var workspace: Workspace? {
         workspaceManager.workspaces.first(where: { $0.id == workspaceID })
@@ -75,6 +80,15 @@ struct WorkspaceWindowContent: View {
         }
         .onChange(of: spaceCollection?.activeSpaceID) { _, _ in
             spaceCollection?.activeSpace?.activeTab?.paneViewModel.containerSize = lastContainerSize
+        }
+        .overlay {
+            if showWorkspaceSwitcher {
+                WorkspaceSwitcherOverlay(isPresented: $showWorkspaceSwitcher)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .toggleWorkspaceSwitcher)) { notification in
+            guard let id = notification.object as? UUID, id == workspaceID else { return }
+            showWorkspaceSwitcher.toggle()
         }
     }
 

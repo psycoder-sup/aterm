@@ -51,6 +51,12 @@ targets:
               UTTypeConformsTo = ("public.data");
               UTTypeDescription = "aterm Space";
               UTTypeTagSpecification = {};
+            },
+            {
+              UTTypeIdentifier = "com.aterm.workspace-drag-item";
+              UTTypeConformsTo = ("public.data");
+              UTTypeDescription = "aterm Workspace";
+              UTTypeTagSpecification = {};
             }
           )
         CODE_SIGN_ENTITLEMENTS: aterm/aterm.entitlements
