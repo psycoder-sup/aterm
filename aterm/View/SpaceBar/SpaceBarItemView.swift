@@ -40,6 +40,12 @@ struct SpaceBarItemView: View {
         .contextMenu {
             Button("Rename") { isRenaming = true }
             Divider()
+            DefaultDirectoryMenu(
+                name: space.name,
+                currentDirectory: space.defaultWorkingDirectory,
+                onSet: { space.defaultWorkingDirectory = $0 }
+            )
+            Divider()
             Button("Close Space", action: onClose)
         }
         .accessibilityElement(children: .combine)

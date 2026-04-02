@@ -27,6 +27,10 @@ final class PaneViewModel {
     /// Called when the last pane is closed. Used by TabModel to trigger cascading close.
     var onEmpty: (() -> Void)?
 
+    /// Provides the space/workspace default directory when pane-level resolution fails.
+    /// Set by the owning SpaceModel so PaneViewModel doesn't need to know the hierarchy.
+    var directoryFallback: (() -> String?)?
+
     // MARK: - Private
 
     nonisolated(unsafe) private var observers: [NSObjectProtocol] = []
@@ -174,7 +178,7 @@ final class PaneViewModel {
 
     // MARK: - Private
 
-    /// Resolve working directory for a pane: inherited config (OSC 7) -> tree -> $HOME.
+    /// Resolve working directory for a pane: inherited config (OSC 7) -> tree -> space/workspace default -> $HOME.
     private func resolveWorkingDirectory(for paneID: UUID) -> String {
         if let surface = surfaces[paneID]?.surface {
             // working_directory is zig-allocated; C API has no free function (same in Ghostty's own app)
@@ -187,6 +191,10 @@ final class PaneViewModel {
         if case .leaf(_, let wd) = splitTree.findLeaf(paneID: paneID),
            !wd.isEmpty, wd != "~" {
             return wd
+        }
+
+        if let fallback = directoryFallback?() {
+            return fallback
         }
 
         return ProcessInfo.processInfo.environment["HOME"] ?? "~"

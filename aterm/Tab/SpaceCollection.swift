@@ -14,6 +14,9 @@ final class SpaceCollection {
     /// the callback owner is responsible for propagating the quit signal.
     var onEmpty: (() -> Void)?
 
+    /// The owning workspace's default directory. Propagated to new spaces.
+    var workspaceDefaultDirectory: URL?
+
     private var spaceCounter: Int = 1
 
     init(workingDirectory: String = "~") {
@@ -37,6 +40,7 @@ final class SpaceCollection {
         spaceCounter += 1
         let tab = TabModel(name: "Tab 1", workingDirectory: workingDirectory)
         let space = SpaceModel(name: "Space \(spaceCounter)", initialTab: tab)
+        space.workspaceDefaultDirectory = workspaceDefaultDirectory
         wireSpaceClose(space)
         spaces.append(space)
         activeSpaceID = space.id
@@ -98,12 +102,22 @@ final class SpaceCollection {
 
     // MARK: - Working Directory
 
-    /// Resolves the working directory from the active pane of the active tab of the active space.
+    /// Resolves the working directory from the active pane, falling back through
+    /// the space → workspace → $HOME hierarchy via `WorkingDirectoryResolver`.
     func resolveWorkingDirectory() -> String {
+        let sourcePaneDir = sourcePaneDirectory()
+        let spaceDefault = activeSpace?.defaultWorkingDirectory
+        return WorkingDirectoryResolver.resolve(
+            sourcePaneDirectory: sourcePaneDir,
+            spaceDefault: spaceDefault,
+            workspaceDefault: workspaceDefaultDirectory
+        )
+    }
+
+    /// Extracts the working directory from the active pane (OSC 7 or tree node).
+    private func sourcePaneDirectory() -> String? {
         guard let space = activeSpace,
-              let tab = space.activeTab else {
-            return ProcessInfo.processInfo.environment["HOME"] ?? "~"
-        }
+              let tab = space.activeTab else { return nil }
         let pvm = tab.paneViewModel
         let focusedID = pvm.splitTree.focusedPaneID
         if let surface = pvm.surface(for: focusedID)?.surface {
@@ -116,7 +130,15 @@ final class SpaceCollection {
            !wd.isEmpty, wd != "~" {
             return wd
         }
-        return ProcessInfo.processInfo.environment["HOME"] ?? "~"
+        return nil
+    }
+
+    /// Updates the workspace default directory on this collection and all owned spaces.
+    func propagateWorkspaceDefault(_ url: URL?) {
+        workspaceDefaultDirectory = url
+        for space in spaces {
+            space.workspaceDefaultDirectory = url
+        }
     }
 
     // MARK: - Private

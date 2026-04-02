@@ -5,6 +5,7 @@ struct SidebarSpaceRowView: View {
     let isActive: Bool
     let isKeyboardSelected: Bool
     let onSelect: () -> Void
+    let onSetDirectory: (URL?) -> Void
 
     @State private var isHovering = false
 
@@ -41,6 +42,13 @@ struct SidebarSpaceRowView: View {
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
         .onHover { isHovering = $0 }
+        .contextMenu {
+            DefaultDirectoryMenu(
+                name: space.name,
+                currentDirectory: space.defaultWorkingDirectory,
+                onSet: onSetDirectory
+            )
+        }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("space-row-\(space.id)")
         .accessibilityLabel(space.name)

@@ -7,6 +7,7 @@ struct SidebarWorkspaceHeaderView: View {
     let isKeyboardSelected: Bool
     let onToggleDisclosure: () -> Void
     let onAddSpace: () -> Void
+    let onSetDirectory: (URL?) -> Void
 
     @State private var isHovering = false
 
@@ -48,6 +49,13 @@ struct SidebarWorkspaceHeaderView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { onToggleDisclosure() }
+        .contextMenu {
+            DefaultDirectoryMenu(
+                name: workspace.name,
+                currentDirectory: workspace.defaultWorkingDirectory,
+                onSet: onSetDirectory
+            )
+        }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("workspace-header-\(workspace.id)")
         .accessibilityLabel("\(workspace.name), \(workspace.spaceCollection.spaces.count) spaces, \(isExpanded ? "expanded" : "collapsed")")

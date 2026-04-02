@@ -33,7 +33,10 @@ struct SidebarExpandedContentView: View {
                             isActive: workspace.id == workspaceCollection.activeWorkspaceID,
                             isKeyboardSelected: selectedIndex == index,
                             onToggleDisclosure: { toggleDisclosure(workspace.id) },
-                            onAddSpace: { addSpace(to: workspace) }
+                            onAddSpace: { addSpace(to: workspace) },
+                            onSetDirectory: { url in
+                                workspace.setDefaultWorkingDirectory(url)
+                            }
                         )
 
                     case .spaceRow(let workspace, let space):
@@ -42,7 +45,10 @@ struct SidebarExpandedContentView: View {
                             isActive: workspace.id == workspaceCollection.activeWorkspaceID
                                 && space.id == workspace.spaceCollection.activeSpaceID,
                             isKeyboardSelected: selectedIndex == index,
-                            onSelect: { selectSpace(workspace: workspace, spaceID: space.id) }
+                            onSelect: { selectSpace(workspace: workspace, spaceID: space.id) },
+                            onSetDirectory: { url in
+                                space.defaultWorkingDirectory = url
+                            }
                         )
                     }
                 }

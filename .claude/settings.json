@@ -6,7 +6,8 @@
       "Bash(xcrun swiftc -typecheck:*)",
       "Bash(zig build:*)",
       "Bash(xcodebuild build -scheme aterm:*)",
-      "Bash(xcodebuild -project aterm.xcodeproj:*)"
+      "Bash(xcodebuild -project aterm.xcodeproj:*)",
+      "Bash(xcodebuild -project */aterm/aterm.xcodeproj *)"
     ]
   },
   "enabledPlugins": {

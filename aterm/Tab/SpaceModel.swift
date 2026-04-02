@@ -11,6 +11,9 @@ final class SpaceModel: Identifiable {
     let createdAt: Date
     var defaultWorkingDirectory: URL?
 
+    /// The owning workspace's default directory, set by SpaceCollection/Workspace.
+    var workspaceDefaultDirectory: URL?
+
     /// Called when the space's last tab is closed. The owning SpaceCollection should remove this space.
     var onEmpty: (() -> Void)?
 
@@ -22,6 +25,7 @@ final class SpaceModel: Identifiable {
         self.createdAt = Date()
 
         wireTabClose(initialTab)
+        wireDirectoryFallback(initialTab)
     }
 
     // MARK: - Computed
@@ -36,6 +40,7 @@ final class SpaceModel: Identifiable {
         let tabIndex = tabs.count + 1
         let tab = TabModel(name: "Tab \(tabIndex)", workingDirectory: workingDirectory)
         wireTabClose(tab)
+        wireDirectoryFallback(tab)
         tabs.append(tab)
         activeTabID = tab.id
     }
@@ -131,6 +136,19 @@ final class SpaceModel: Identifiable {
     private func wireTabClose(_ tab: TabModel) {
         tab.onEmpty = { [weak self, tabID = tab.id] in
             self?.removeTab(id: tabID)
+        }
+    }
+
+    private func wireDirectoryFallback(_ tab: TabModel) {
+        tab.paneViewModel.directoryFallback = { [weak self] in
+            guard let self,
+                  self.defaultWorkingDirectory != nil || self.workspaceDefaultDirectory != nil
+            else { return nil }
+            return WorkingDirectoryResolver.resolve(
+                sourcePaneDirectory: nil,
+                spaceDefault: self.defaultWorkingDirectory,
+                workspaceDefault: self.workspaceDefaultDirectory
+            )
         }
     }
 }

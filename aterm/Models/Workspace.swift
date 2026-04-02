@@ -55,10 +55,17 @@ final class Workspace: Identifiable {
             ?? ProcessInfo.processInfo.environment["HOME"]
             ?? "~"
         self.spaceCollection = SpaceCollection(workingDirectory: workingDir)
+        self.spaceCollection.propagateWorkspaceDefault(defaultWorkingDirectory)
 
         self.spaceCollection.onEmpty = { [weak self] in
             self?.onEmpty?()
         }
+    }
+
+    /// Updates the default working directory and propagates to all spaces.
+    func setDefaultWorkingDirectory(_ url: URL?) {
+        defaultWorkingDirectory = url
+        spaceCollection.propagateWorkspaceDefault(url)
     }
 
     // MARK: - Convenience Accessors
