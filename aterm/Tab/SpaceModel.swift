@@ -28,6 +28,23 @@ final class SpaceModel: Identifiable {
         wireDirectoryFallback(initialTab)
     }
 
+    /// Restore a space with specific ID, pre-built tabs, and active tab selection.
+    init(id: UUID, name: String, tabs: [TabModel], activeTabID: UUID, defaultWorkingDirectory: URL?) {
+        self.id = id
+        self.name = name
+        self.tabs = tabs
+        self.activeTabID = tabs.contains(where: { $0.id == activeTabID })
+            ? activeTabID
+            : tabs[0].id
+        self.createdAt = Date()
+        self.defaultWorkingDirectory = defaultWorkingDirectory
+
+        for tab in tabs {
+            wireTabClose(tab)
+            wireDirectoryFallback(tab)
+        }
+    }
+
     // MARK: - Computed
 
     var activeTab: TabModel? {

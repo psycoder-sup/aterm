@@ -29,6 +29,18 @@ final class WorkspaceCollection {
         wireWorkspaceClose(workspace)
     }
 
+    /// Restore a workspace collection with pre-built workspaces.
+    init(workspaces: [Workspace], activeWorkspaceID: UUID) {
+        self.workspaces = workspaces
+        self.activeWorkspaceID = workspaces.contains(where: { $0.id == activeWorkspaceID })
+            ? activeWorkspaceID
+            : workspaces[0].id
+
+        for workspace in workspaces {
+            wireWorkspaceClose(workspace)
+        }
+    }
+
     // MARK: - Computed
 
     var activeWorkspace: Workspace? {

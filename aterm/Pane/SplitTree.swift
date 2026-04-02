@@ -23,6 +23,15 @@ struct SplitTree: Sendable, Equatable {
         self.root = .leaf(paneID: paneID, workingDirectory: workingDirectory)
         self.focusedPaneID = paneID
     }
+
+    /// Restore a tree from a persisted root and focused pane ID.
+    /// Falls back to the first leaf if `focusedPaneID` is not found in the tree.
+    init(root: PaneNode, focusedPaneID: UUID) {
+        self.root = root
+        self.focusedPaneID = root.containsLeaf(paneID: focusedPaneID)
+            ? focusedPaneID
+            : root.firstLeaf()
+    }
 }
 
 // MARK: - Query

@@ -46,8 +46,29 @@ final class PaneViewModel {
         self.splitTree = SplitTree(paneID: initialID, workingDirectory: workingDirectory)
         self.surfaces[initialID] = surface
         self.surfaceViews[initialID] = surfaceView
+        installObservers()
+    }
 
-        // Subscribe to surface close (shell exited)
+    static func fromState(_ root: PaneNodeState, focusedPaneID: UUID) -> PaneViewModel {
+        var surfaces: [UUID: GhosttyTerminalSurface] = [:]
+        var surfaceViews: [UUID: TerminalSurfaceView] = [:]
+        let paneNode = Self.buildPaneNode(from: root, surfaces: &surfaces, surfaceViews: &surfaceViews)
+        let splitTree = SplitTree(root: paneNode, focusedPaneID: focusedPaneID)
+        return PaneViewModel(splitTree: splitTree, surfaces: surfaces, surfaceViews: surfaceViews)
+    }
+
+    private init(
+        splitTree: SplitTree,
+        surfaces: [UUID: GhosttyTerminalSurface],
+        surfaceViews: [UUID: TerminalSurfaceView]
+    ) {
+        self.splitTree = splitTree
+        self.surfaces = surfaces
+        self.surfaceViews = surfaceViews
+        installObservers()
+    }
+
+    private func installObservers() {
         observers.append(NotificationCenter.default.addObserver(
             forName: GhosttyApp.surfaceCloseNotification, object: nil, queue: .main
         ) { [weak self] notification in
@@ -57,7 +78,6 @@ final class PaneViewModel {
             self.closePane(paneID: paneID)
         })
 
-        // Subscribe to surface title changes
         observers.append(NotificationCenter.default.addObserver(
             forName: GhosttyApp.surfaceTitleNotification, object: nil, queue: .main
         ) { [weak self] notification in
@@ -70,7 +90,6 @@ final class PaneViewModel {
             }
         })
 
-        // Subscribe to surface working directory changes (OSC 7)
         observers.append(NotificationCenter.default.addObserver(
             forName: GhosttyApp.surfacePwdNotification, object: nil, queue: .main
         ) { [weak self] notification in
@@ -80,6 +99,32 @@ final class PaneViewModel {
             guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
             self.splitTree.updateWorkingDirectory(paneID: paneID, newWorkingDirectory: pwd)
         })
+    }
+
+    private static func buildPaneNode(
+        from state: PaneNodeState,
+        surfaces: inout [UUID: GhosttyTerminalSurface],
+        surfaceViews: inout [UUID: TerminalSurfaceView]
+    ) -> PaneNode {
+        switch state {
+        case .pane(let leaf):
+            let surface = GhosttyTerminalSurface()
+            let surfaceView = TerminalSurfaceView()
+            surfaceView.terminalSurface = surface
+            surfaceView.initialWorkingDirectory = leaf.workingDirectory
+            surfaces[leaf.paneID] = surface
+            surfaceViews[leaf.paneID] = surfaceView
+            return .leaf(paneID: leaf.paneID, workingDirectory: leaf.workingDirectory)
+
+        case .split(let split):
+            guard let direction = SplitDirection.from(stateValue: split.direction) else {
+                // Invalid direction — treat as a single pane with the first leaf
+                return buildPaneNode(from: split.first, surfaces: &surfaces, surfaceViews: &surfaceViews)
+            }
+            let first = buildPaneNode(from: split.first, surfaces: &surfaces, surfaceViews: &surfaceViews)
+            let second = buildPaneNode(from: split.second, surfaces: &surfaces, surfaceViews: &surfaceViews)
+            return .split(id: UUID(), direction: direction, ratio: split.ratio, first: first, second: second)
+        }
     }
 
     // MARK: - Lookup

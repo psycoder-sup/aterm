@@ -24,6 +24,18 @@ final class TabModel: Identifiable {
         }
     }
 
+    /// Restore a tab with a specific ID and pre-built PaneViewModel.
+    init(id: UUID, name: String, paneViewModel: PaneViewModel) {
+        self.id = id
+        self.name = name
+        self.createdAt = Date()
+        self.paneViewModel = paneViewModel
+
+        self.paneViewModel.onEmpty = { [weak self] in
+            self?.onEmpty?()
+        }
+    }
+
     /// The title from the focused pane's terminal (for display in the tab bar).
     var title: String {
         paneViewModel.title

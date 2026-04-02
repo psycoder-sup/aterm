@@ -28,6 +28,20 @@ final class SpaceCollection {
         wireSpaceClose(initialSpace)
     }
 
+    /// Restore a space collection with pre-built spaces.
+    init(spaces: [SpaceModel], activeSpaceID: UUID, workspaceDefaultDirectory: URL?) {
+        self.spaces = spaces
+        self.activeSpaceID = spaces.contains(where: { $0.id == activeSpaceID })
+            ? activeSpaceID
+            : spaces[0].id
+        self.workspaceDefaultDirectory = workspaceDefaultDirectory
+
+        for space in spaces {
+            space.workspaceDefaultDirectory = workspaceDefaultDirectory
+            wireSpaceClose(space)
+        }
+    }
+
     // MARK: - Computed
 
     var activeSpace: SpaceModel? {

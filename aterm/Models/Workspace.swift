@@ -58,6 +58,20 @@ final class Workspace: Identifiable {
         }
     }
 
+    /// Restore a workspace with a pre-built SpaceCollection.
+    init(id: UUID, name: String, defaultWorkingDirectory: URL?, spaceCollection: SpaceCollection) {
+        self.id = id
+        self.name = name
+        self.defaultWorkingDirectory = defaultWorkingDirectory
+        self.createdAt = Date()
+        self.spaceCollection = spaceCollection
+        self.spaceCollection.propagateWorkspaceDefault(defaultWorkingDirectory)
+
+        self.spaceCollection.onEmpty = { [weak self] in
+            self?.onEmpty?()
+        }
+    }
+
     /// Updates the default working directory and propagates to all spaces.
     func setDefaultWorkingDirectory(_ url: URL?) {
         defaultWorkingDirectory = url
