@@ -18,9 +18,11 @@ schemes:
       targets:
         aterm: all
         atermTests: [test]
+        atermUITests: [test]
     test:
       targets:
         - atermTests
+        - atermUITests
 
 targets:
   aterm:
@@ -87,3 +89,15 @@ targets:
         BUNDLE_LOADER: $(TEST_HOST)
         HEADER_SEARCH_PATHS:
           - $(SRCROOT)/aterm/Vendor/GhosttyKit.xcframework/macos-arm64/Headers
+
+  atermUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: atermUITests
+    dependencies:
+      - target: aterm
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aterm.uitests
+        GENERATE_INFOPLIST_FILE: true

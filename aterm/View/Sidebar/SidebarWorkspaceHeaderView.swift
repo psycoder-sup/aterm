@@ -32,6 +32,7 @@ struct SidebarWorkspaceHeaderView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("add-space-\(workspace.id)")
                 .accessibilityLabel("New space in \(workspace.name)")
             }
         }
@@ -48,6 +49,7 @@ struct SidebarWorkspaceHeaderView: View {
         .contentShape(Rectangle())
         .onTapGesture { onToggleDisclosure() }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("workspace-header-\(workspace.id)")
         .accessibilityLabel("\(workspace.name), \(workspace.spaceCollection.spaces.count) spaces, \(isExpanded ? "expanded" : "collapsed")")
     }
 }

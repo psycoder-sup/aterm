@@ -42,6 +42,7 @@ struct SidebarSpaceRowView: View {
         .onTapGesture { onSelect() }
         .onHover { isHovering = $0 }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("space-row-\(space.id)")
         .accessibilityLabel(space.name)
         .accessibilityValue(isActive ? "selected" : "not selected")
     }

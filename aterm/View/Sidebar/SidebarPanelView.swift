@@ -18,6 +18,7 @@ struct SidebarPanelView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 12, style: .continuous))
         .padding(EdgeInsets(top: 4, leading: 4, bottom: 6, trailing: 4))
         .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("sidebar-panel")
         .accessibilityLabel("Workspace sidebar")
     }
 
@@ -38,6 +39,7 @@ struct SidebarPanelView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+        .accessibilityIdentifier("new-workspace-button")
         .accessibilityLabel("New workspace")
     }
 }

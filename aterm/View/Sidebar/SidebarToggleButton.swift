@@ -15,6 +15,7 @@ struct SidebarToggleButton: View {
                 .foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("sidebar-toggle")
         .accessibilityLabel("Toggle sidebar")
     }
 }
