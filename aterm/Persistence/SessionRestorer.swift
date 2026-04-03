@@ -29,27 +29,40 @@ enum SessionRestorer {
 
     /// Attempts to load and decode session state from disk.
     /// Tries state.json first, falls back to state.prev.json, returns nil on total failure.
-    static func loadState() -> SessionState? {
-        if let state = loadFrom(url: SessionSerializer.stateFileURL) {
-            return state
+    static func loadState() -> RestoreResult? {
+        let clock = ContinuousClock()
+        let start = clock.now
+        var metrics = RestoreMetrics()
+
+        if let state = loadFrom(url: SessionSerializer.stateFileURL, metrics: &metrics) {
+            metrics.source = .primary
+            metrics.durationMs = Int((clock.now - start).components.attoseconds / 1_000_000_000_000_000)
+            metrics.log()
+            return RestoreResult(state: state, metrics: metrics)
         }
         Log.persistence.info("Primary state file failed, trying backup")
-        if let state = loadFrom(url: SessionSerializer.backupFileURL) {
-            return state
+        metrics = RestoreMetrics()
+        if let state = loadFrom(url: SessionSerializer.backupFileURL, metrics: &metrics) {
+            metrics.source = .backup
+            metrics.durationMs = Int((clock.now - start).components.attoseconds / 1_000_000_000_000_000)
+            metrics.log()
+            return RestoreResult(state: state, metrics: metrics)
         }
         Log.persistence.info("No restorable session state found")
         return nil
     }
 
-    private static func loadFrom(url: URL) -> SessionState? {
+    private static func loadFrom(url: URL, metrics: inout RestoreMetrics) -> SessionState? {
         do {
             let data = try Data(contentsOf: url)
-            guard let migrated = try SessionStateMigrator.migrateIfNeeded(data: data) else {
+            metrics.fileBytes = data.count
+            guard let migratedData = try SessionStateMigrator.migrateIfNeeded(data: data) else {
                 Log.persistence.warning("State file at \(url.lastPathComponent) is from a future version")
                 return nil
             }
-            let state = try decode(from: migrated)
-            return try validate(state)
+            metrics.migrated = (data != migratedData)
+            let state = try decode(from: migratedData)
+            return try validate(state, metrics: &metrics)
         } catch {
             Log.persistence.warning("Failed to load \(url.lastPathComponent): \(error)")
             return nil
@@ -69,6 +82,12 @@ enum SessionRestorer {
     /// Validates structural integrity and fixes stale references.
     /// Returns a corrected SessionState or throws on unrecoverable issues.
     static func validate(_ state: SessionState) throws -> SessionState {
+        var metrics = RestoreMetrics()
+        return try validate(state, metrics: &metrics)
+    }
+
+    /// Validates structural integrity, fixes stale references, and records corrections in metrics.
+    static func validate(_ state: SessionState, metrics: inout RestoreMetrics) throws -> SessionState {
         guard !state.workspaces.isEmpty else {
             throw RestoreError.emptyWorkspaces
         }
@@ -84,18 +103,27 @@ enum SessionRestorer {
                 }
 
                 let validatedTabs = space.tabs.map { tab -> TabState in
-                    let fixedActivePaneId = paneExists(tab.activePaneId, in: tab.root)
+                    let paneIdValid = paneExists(tab.activePaneId, in: tab.root)
+                    if !paneIdValid {
+                        metrics.stalePaneIdFixes += 1
+                    }
+                    let fixedActivePaneId = paneIdValid
                         ? tab.activePaneId
                         : firstLeafId(in: tab.root)
                     return TabState(
                         id: tab.id,
                         name: tab.name,
                         activePaneId: fixedActivePaneId,
-                        root: resolveWorkingDirectories(in: tab.root, fallback: workspace.defaultWorkingDirectory)
+                        root: resolveWorkingDirectories(in: tab.root, fallback: workspace.defaultWorkingDirectory, metrics: &metrics)
                     )
                 }
+                metrics.tabCount += validatedTabs.count
 
-                let fixedActiveTabId = validatedTabs.contains(where: { $0.id == space.activeTabId })
+                let tabIdValid = validatedTabs.contains(where: { $0.id == space.activeTabId })
+                if !tabIdValid {
+                    metrics.staleTabIdFixes += 1
+                }
+                let fixedActiveTabId = tabIdValid
                     ? space.activeTabId
                     : validatedTabs[0].id
 
@@ -107,8 +135,13 @@ enum SessionRestorer {
                     tabs: validatedTabs
                 )
             }
+            metrics.spaceCount += validatedSpaces.count
 
-            let fixedActiveSpaceId = validatedSpaces.contains(where: { $0.id == workspace.activeSpaceId })
+            let spaceIdValid = validatedSpaces.contains(where: { $0.id == workspace.activeSpaceId })
+            if !spaceIdValid {
+                metrics.staleSpaceIdFixes += 1
+            }
+            let fixedActiveSpaceId = spaceIdValid
                 ? workspace.activeSpaceId
                 : validatedSpaces[0].id
 
@@ -122,8 +155,13 @@ enum SessionRestorer {
                 isFullscreen: workspace.isFullscreen
             )
         }
+        metrics.workspaceCount = validatedWorkspaces.count
 
-        let fixedActiveWorkspaceId = validatedWorkspaces.contains(where: { $0.id == state.activeWorkspaceId })
+        let workspaceIdValid = validatedWorkspaces.contains(where: { $0.id == state.activeWorkspaceId })
+        if !workspaceIdValid {
+            metrics.staleWorkspaceIdFixes += 1
+        }
+        let fixedActiveWorkspaceId = workspaceIdValid
             ? state.activeWorkspaceId
             : validatedWorkspaces[0].id
 
@@ -181,21 +219,27 @@ enum SessionRestorer {
     /// Resolves working directories in a pane tree, replacing missing paths with fallbacks.
     private static func resolveWorkingDirectories(
         in node: PaneNodeState,
-        fallback: String?
+        fallback: String?,
+        metrics: inout RestoreMetrics
     ) -> PaneNodeState {
         switch node {
         case .pane(let leaf):
-            let resolved = resolveDirectory(leaf.workingDirectory)
+            metrics.paneCount += 1
+            let original = resolveDirectory(leaf.workingDirectory)
+            let resolved = original
                 ?? fallback.flatMap { resolveDirectory($0) }
                 ?? homeDirectory()
+            if original == nil {
+                metrics.directoryFallbacks += 1
+            }
             return .pane(PaneLeafState(paneID: leaf.paneID, workingDirectory: resolved))
 
         case .split(let split):
             return .split(PaneSplitState(
                 direction: split.direction,
                 ratio: split.ratio,
-                first: resolveWorkingDirectories(in: split.first, fallback: fallback),
-                second: resolveWorkingDirectories(in: split.second, fallback: fallback)
+                first: resolveWorkingDirectories(in: split.first, fallback: fallback, metrics: &metrics),
+                second: resolveWorkingDirectories(in: split.second, fallback: fallback, metrics: &metrics)
             ))
         }
     }

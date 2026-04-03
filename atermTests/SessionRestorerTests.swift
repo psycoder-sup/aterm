@@ -842,3 +842,364 @@ struct SplitTreeRestoreTests {
         #expect(tree.focusedPaneID == paneA) // falls back to firstLeaf
     }
 }
+
+// MARK: - Metrics Tests
+
+struct SessionRestorerMetricsTests {
+
+    // MARK: - Helpers
+
+    private static func makeCleanState() -> SessionState {
+        let paneID = UUID()
+        let tabID = UUID()
+        let spaceID = UUID()
+        let wsID = UUID()
+        return SessionState(
+            version: 1,
+            savedAt: Date(),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "ws",
+                    activeSpaceId: spaceID,
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: tabID,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tabID,
+                                    name: "Tab 1",
+                                    activePaneId: paneID,
+                                    root: .pane(PaneLeafState(paneID: paneID, workingDirectory: "/tmp"))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+    }
+
+    // MARK: - Clean State Baseline
+
+    @Test func cleanStateProducesZeroCorrections() throws {
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(Self.makeCleanState(), metrics: &metrics)
+
+        #expect(metrics.totalStaleIdFixes == 0)
+        #expect(metrics.directoryFallbacks == 0)
+    }
+
+    @Test func cleanStateCountsEntities() throws {
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(Self.makeCleanState(), metrics: &metrics)
+
+        #expect(metrics.workspaceCount == 1)
+        #expect(metrics.spaceCount == 1)
+        #expect(metrics.tabCount == 1)
+        #expect(metrics.paneCount == 1)
+    }
+
+    // MARK: - Stale ID Counting
+
+    @Test func staleWorkspaceIdIsCounted() throws {
+        let paneID = UUID()
+        let tabID = UUID()
+        let spaceID = UUID()
+        let state = SessionState(
+            version: 1,
+            savedAt: Date(),
+            activeWorkspaceId: UUID(), // stale
+            workspaces: [
+                WorkspaceState(
+                    id: UUID(),
+                    name: "ws",
+                    activeSpaceId: spaceID,
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: tabID,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tabID,
+                                    name: "Tab 1",
+                                    activePaneId: paneID,
+                                    root: .pane(PaneLeafState(paneID: paneID, workingDirectory: "/tmp"))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(state, metrics: &metrics)
+        #expect(metrics.staleWorkspaceIdFixes == 1)
+        #expect(metrics.totalStaleIdFixes == 1)
+    }
+
+    @Test func staleSpaceIdIsCounted() throws {
+        let paneID = UUID()
+        let tabID = UUID()
+        let spaceID = UUID()
+        let wsID = UUID()
+        let state = SessionState(
+            version: 1,
+            savedAt: Date(),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "ws",
+                    activeSpaceId: UUID(), // stale
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: tabID,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tabID,
+                                    name: "Tab 1",
+                                    activePaneId: paneID,
+                                    root: .pane(PaneLeafState(paneID: paneID, workingDirectory: "/tmp"))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(state, metrics: &metrics)
+        #expect(metrics.staleSpaceIdFixes == 1)
+    }
+
+    @Test func staleTabIdIsCounted() throws {
+        let paneID = UUID()
+        let spaceID = UUID()
+        let wsID = UUID()
+        let state = SessionState(
+            version: 1,
+            savedAt: Date(),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "ws",
+                    activeSpaceId: spaceID,
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: UUID(), // stale
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: UUID(),
+                                    name: "Tab 1",
+                                    activePaneId: paneID,
+                                    root: .pane(PaneLeafState(paneID: paneID, workingDirectory: "/tmp"))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(state, metrics: &metrics)
+        #expect(metrics.staleTabIdFixes == 1)
+    }
+
+    @Test func stalePaneIdIsCounted() throws {
+        let paneID = UUID()
+        let tabID = UUID()
+        let spaceID = UUID()
+        let wsID = UUID()
+        let state = SessionState(
+            version: 1,
+            savedAt: Date(),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "ws",
+                    activeSpaceId: spaceID,
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: tabID,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tabID,
+                                    name: "Tab 1",
+                                    activePaneId: UUID(), // stale
+                                    root: .pane(PaneLeafState(paneID: paneID, workingDirectory: "/tmp"))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(state, metrics: &metrics)
+        #expect(metrics.stalePaneIdFixes == 1)
+    }
+
+    // MARK: - Directory Fallback Counting
+
+    @Test func missingDirectoryIsCounted() throws {
+        let paneID = UUID()
+        let tabID = UUID()
+        let spaceID = UUID()
+        let wsID = UUID()
+        let state = SessionState(
+            version: 1,
+            savedAt: Date(),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "ws",
+                    activeSpaceId: spaceID,
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: tabID,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tabID,
+                                    name: "Tab 1",
+                                    activePaneId: paneID,
+                                    root: .pane(PaneLeafState(
+                                        paneID: paneID,
+                                        workingDirectory: "/nonexistent/path/that/does/not/exist"
+                                    ))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(state, metrics: &metrics)
+        #expect(metrics.directoryFallbacks == 1)
+    }
+
+    // MARK: - Multi-Entity Counting
+
+    @Test func multipleEntitiesAreCounted() throws {
+        let pane1 = UUID(), pane2 = UUID(), pane3 = UUID()
+        let tab1 = UUID(), tab2 = UUID()
+        let space1 = UUID(), space2 = UUID()
+        let wsID = UUID()
+
+        let state = SessionState(
+            version: 1,
+            savedAt: Date(),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "ws",
+                    activeSpaceId: space1,
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: space1,
+                            name: "space1",
+                            activeTabId: tab1,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tab1,
+                                    name: "Tab 1",
+                                    activePaneId: pane1,
+                                    root: .split(PaneSplitState(
+                                        direction: "horizontal",
+                                        ratio: 0.5,
+                                        first: .pane(PaneLeafState(paneID: pane1, workingDirectory: "/tmp")),
+                                        second: .pane(PaneLeafState(paneID: pane2, workingDirectory: "/tmp"))
+                                    ))
+                                )
+                            ]
+                        ),
+                        SpaceState(
+                            id: space2,
+                            name: "space2",
+                            activeTabId: tab2,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tab2,
+                                    name: "Tab 2",
+                                    activePaneId: pane3,
+                                    root: .pane(PaneLeafState(paneID: pane3, workingDirectory: "/tmp"))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        var metrics = RestoreMetrics()
+        _ = try SessionRestorer.validate(state, metrics: &metrics)
+
+        #expect(metrics.workspaceCount == 1)
+        #expect(metrics.spaceCount == 2)
+        #expect(metrics.tabCount == 2)
+        #expect(metrics.paneCount == 3)
+        #expect(metrics.totalStaleIdFixes == 0)
+    }
+
+    // MARK: - Total Stale ID Fixes
+
+    @Test func totalStaleIdFixesAggregatesAll() {
+        var metrics = RestoreMetrics()
+        metrics.staleWorkspaceIdFixes = 1
+        metrics.staleSpaceIdFixes = 2
+        metrics.staleTabIdFixes = 3
+        metrics.stalePaneIdFixes = 4
+        #expect(metrics.totalStaleIdFixes == 10)
+    }
+}

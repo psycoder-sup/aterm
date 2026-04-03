@@ -9,7 +9,8 @@ class AtermAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         windowCoordinator.workspaceManager = workspaceManager
 
-        if let state = SessionRestorer.loadState() {
+        if let result = SessionRestorer.loadState() {
+            let state = result.state
             Log.persistence.info("Restoring session with \(state.workspaces.count) workspace(s)")
             // Currently single-window: all workspaces go into one WorkspaceCollection.
             // Multi-window support (one collection per window) is a future enhancement.
