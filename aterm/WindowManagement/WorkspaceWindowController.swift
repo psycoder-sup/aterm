@@ -164,6 +164,13 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
     // MARK: - NSWindowDelegate
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        // If this is the last window, delegate to the app termination flow
+        // so session state is serialized and process detection runs.
+        if windowCoordinator?.windowCount == 1 {
+            NSApp.terminate(nil)
+            return false
+        }
+
         for workspace in workspaceCollection.workspaces {
             workspace.cleanup()
         }

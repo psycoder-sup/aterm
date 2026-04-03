@@ -5,4 +5,5 @@ enum Log {
     static let view = Logger(subsystem: "com.aterm.app", category: "view")
     static let ghostty = Logger(subsystem: "com.aterm.app", category: "ghostty")
     static let persistence = Logger(subsystem: "com.aterm.app", category: "persistence")
+    static let lifecycle = Logger(subsystem: "com.aterm.app", category: "lifecycle")
 }

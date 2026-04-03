@@ -22,7 +22,11 @@ enum SessionSerializer {
 
     /// Captures the current state of the workspace collection as a serializable snapshot.
     @MainActor
-    static func snapshot(from collection: WorkspaceCollection) -> SessionState {
+    static func snapshot(
+        from collection: WorkspaceCollection,
+        windowFrame: WindowFrame? = nil,
+        isFullscreen: Bool? = nil
+    ) -> SessionState {
         let workspaces = collection.workspaces.map { workspace in
             WorkspaceState(
                 id: workspace.id,
@@ -45,8 +49,8 @@ enum SessionSerializer {
                         }
                     )
                 },
-                windowFrame: nil,
-                isFullscreen: nil
+                windowFrame: windowFrame,
+                isFullscreen: isFullscreen
             )
         }
 

@@ -4,6 +4,7 @@ import AppKit
 class AtermAppDelegate: NSObject, NSApplicationDelegate {
     let workspaceManager = WorkspaceManager()
     let windowCoordinator = WindowCoordinator()
+    private lazy var quitFlowCoordinator = QuitFlowCoordinator(windowCoordinator: windowCoordinator)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         windowCoordinator.workspaceManager = workspaceManager
@@ -30,11 +31,6 @@ class AtermAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        for collection in windowCoordinator.allWorkspaceCollections {
-            for workspace in collection.workspaces {
-                workspace.cleanup()
-            }
-        }
-        return .terminateNow
+        quitFlowCoordinator.initiateQuit()
     }
 }

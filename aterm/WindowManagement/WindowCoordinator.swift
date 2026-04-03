@@ -61,5 +61,9 @@ final class WindowCoordinator {
         controllers.map(\.workspaceCollection)
     }
 
+    var allControllers: [WorkspaceWindowController] {
+        controllers
+    }
+
     var windowCount: Int { controllers.count }
 }
