@@ -12,36 +12,56 @@ struct SidebarSpaceRowView: View {
     @State private var isRenaming = false
     @State private var lastClickTime: Date?
 
+    private var tabCountLabel: String {
+        let count = space.tabs.count
+        return count == 1 ? "1 tab" : "\(count) tabs"
+    }
+
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Circle()
-                .fill(isActive ? Color.accentColor : .clear)
-                .frame(width: 4, height: 4)
+                .fill(isActive ? Color.green : Color(white: 0.5, opacity: 0.4))
+                .frame(width: 6, height: 6)
 
             InlineRenameView(
                 text: space.name,
                 isRenaming: $isRenaming,
                 onCommit: { space.name = $0 }
             )
-            .font(.system(size: 11))
-            .foregroundStyle(isActive ? .primary : .secondary)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(isActive ? Color(white: 0.9) : .secondary)
+
+            Spacer()
+
+            Text(tabCountLabel)
+                .font(.system(size: 9))
+                .foregroundStyle(Color(white: 0.45))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.white.opacity(0.06))
+                )
         }
-        .frame(height: 26)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 28)
-        .padding(.trailing, 12)
         .background {
             if isActive {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.accentColor.opacity(0.15))
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.accentColor.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.accentColor.opacity(0.2), lineWidth: 1)
+                    )
             } else if isHovering {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(.quaternary)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white.opacity(0.04))
             }
         }
         .overlay {
             if isKeyboardSelected {
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
             }
         }

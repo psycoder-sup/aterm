@@ -39,7 +39,7 @@ struct SidebarExpandedContentView: View {
                     )
 
                     if disclosedWorkspaces.contains(workspace.id) {
-                        VStack(alignment: .leading, spacing: 0) {
+                        VStack(alignment: .leading, spacing: 4) {
                             ForEach(workspace.spaceCollection.spaces) { space in
                                 SidebarSpaceRowView(
                                     space: space,
@@ -54,6 +54,9 @@ struct SidebarExpandedContentView: View {
                                 )
                             }
                         }
+                        .padding(.horizontal, 6)
+                        .padding(.top, 2)
+                        .padding(.bottom, 4)
                         .dropDestination(for: SpaceDragItem.self) { items, _ in
                             handleSpaceDrop(items: items, spaceCollection: workspace.spaceCollection)
                         }

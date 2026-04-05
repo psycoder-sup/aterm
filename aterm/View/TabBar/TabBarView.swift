@@ -50,7 +50,7 @@ struct TabBarView: View {
                     }
                 }
                 .padding(4)
-                .glassEffect(.regular, in: .capsule)
+                .background(Color.gray.opacity(0.12), in: Capsule())
             }
 
             Button(action: onNewTab) {

@@ -14,37 +14,36 @@ struct SidebarWorkspaceHeaderView: View {
     @State private var isRenaming = false
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
-                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                .animation(.easeInOut(duration: 0.15), value: isExpanded)
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.accentColor)
+                .frame(width: 6, height: 6)
 
             InlineRenameView(
                 text: workspace.name,
                 isRenaming: $isRenaming,
                 onCommit: { workspace.name = $0 }
             )
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(isActive ? .primary : .secondary)
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(0.5)
+            .textCase(.uppercase)
+            .foregroundStyle(.secondary)
 
             Spacer()
 
-            if isHovering || isKeyboardSelected {
-                Button(action: onAddSpace) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("add-space-\(workspace.id)")
-                .accessibilityLabel("New space in \(workspace.name)")
+            Button(action: onAddSpace) {
+                Text("+")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color(white: 0.4, opacity: 1))
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("add-space-\(workspace.id)")
+            .accessibilityLabel("New space in \(workspace.name)")
         }
-        .frame(height: 28)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
         .onHover { isHovering = $0 }
         .background {
             if isKeyboardSelected {
