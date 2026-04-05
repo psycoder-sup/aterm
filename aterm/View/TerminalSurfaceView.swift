@@ -22,6 +22,9 @@ final class TerminalSurfaceView: NSView {
     /// Initial working directory for the shell, set before the view enters a window.
     var initialWorkingDirectory: String?
 
+    /// When true, keyboard and mouse input is suppressed (pane is exited/failed).
+    var isInputSuppressed: Bool = false
+
     private var markedText = NSMutableAttributedString()
     private var keyTextAccumulator: [String]?
     private var trackingArea: NSTrackingArea?
@@ -153,6 +156,7 @@ final class TerminalSurfaceView: NSView {
     // MARK: - Keyboard Input
 
     override func keyDown(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else {
             super.keyDown(with: event)
             return
@@ -248,6 +252,7 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func keyUp(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else {
             super.keyUp(with: event)
             return
@@ -261,6 +266,7 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func flagsChanged(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         let isPress: Bool
         switch Int(event.keyCode) {
@@ -288,8 +294,17 @@ final class TerminalSurfaceView: NSView {
         // in subview order would incorrectly handle shortcuts.
         guard window?.firstResponder === self else { return false }
 
-        // Check split/close shortcuts before ghostty
+        // Cmd+W always works, even when input is suppressed (exited/failed pane)
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if let chars = event.charactersIgnoringModifiers?.lowercased(),
+           chars == "w" && flags == [.command] {
+            delegate?.terminalSurfaceViewRequestClose(self)
+            return true
+        }
+
+        guard !isInputSuppressed else { return false }
+
+        // Check split shortcuts before ghostty
         if let chars = event.charactersIgnoringModifiers?.lowercased() {
             if chars == "d" && flags == [.command, .shift] {
                 delegate?.terminalSurfaceViewRequestSplit(self, direction: .horizontal)
@@ -297,10 +312,6 @@ final class TerminalSurfaceView: NSView {
             }
             if chars == "e" && flags == [.command, .shift] {
                 delegate?.terminalSurfaceViewRequestSplit(self, direction: .vertical)
-                return true
-            }
-            if chars == "w" && flags == [.command] {
-                delegate?.terminalSurfaceViewRequestClose(self)
                 return true
             }
         }
@@ -320,6 +331,12 @@ final class TerminalSurfaceView: NSView {
                 delegate?.terminalSurfaceViewRequestFocusDirection(self, direction: direction)
                 return true
             }
+        }
+
+        // Let aterm-level shortcuts (workspace, space, sidebar) propagate
+        // to the menu bar or window event monitor instead of ghostty.
+        if KeyBindingRegistry.shared.action(for: event) != nil {
+            return false
         }
 
         guard let surface = terminalSurface?.surface else { return false }
@@ -353,10 +370,11 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        // Click-to-focus: grab first responder on click
+        // Click-to-focus: grab first responder on click even when suppressed
         if let window, window.firstResponder !== self {
             window.makeFirstResponder(self)
         }
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         // Only update position on first click to prevent cursor jump during double-click selection
         if event.clickCount == 1 {
@@ -366,37 +384,44 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         sendMousePos(event, surface: surface)
         _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_LEFT, modsFromEvent(event))
     }
 
     override func mouseDragged(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         sendMousePos(event, surface: surface)
     }
 
     override func rightMouseDragged(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         sendMousePos(event, surface: surface)
     }
 
     override func otherMouseDragged(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard event.buttonNumber == 2, let surface = terminalSurface?.surface else { return }
         sendMousePos(event, surface: surface)
     }
 
     override func mouseMoved(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         sendMousePos(event, surface: surface)
     }
 
     override func mouseExited(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         ghostty_surface_mouse_pos(surface, -1, -1, modsFromEvent(event))
     }
 
     override func rightMouseDown(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         if !ghostty_surface_mouse_captured(surface) {
             super.rightMouseDown(with: event)
@@ -407,6 +432,7 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func rightMouseUp(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
         if !ghostty_surface_mouse_captured(surface) {
             super.rightMouseUp(with: event)
@@ -416,12 +442,14 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func otherMouseDown(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard event.buttonNumber == 2, let surface = terminalSurface?.surface else { return }
         sendMousePos(event, surface: surface)
         _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_PRESS, GHOSTTY_MOUSE_MIDDLE, modsFromEvent(event))
     }
 
     override func otherMouseUp(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard event.buttonNumber == 2, let surface = terminalSurface?.surface else { return }
         _ = ghostty_surface_mouse_button(surface, GHOSTTY_MOUSE_RELEASE, GHOSTTY_MOUSE_MIDDLE, modsFromEvent(event))
     }
@@ -433,6 +461,7 @@ final class TerminalSurfaceView: NSView {
     }
 
     override func scrollWheel(with event: NSEvent) {
+        guard !isInputSuppressed else { return }
         guard let surface = terminalSurface?.surface else { return }
 
         var x = event.scrollingDeltaX

@@ -29,6 +29,12 @@ struct TerminalContentView: NSViewRepresentable {
 
         guard let surfaceView = viewModel.surfaceView(for: paneID) else { return }
 
+        // Sync input suppression for exited/failed panes
+        let shouldSuppress = viewModel.paneState(for: paneID) != .running
+        if surfaceView.isInputSuppressed != shouldSuppress {
+            surfaceView.isInputSuppressed = shouldSuppress
+        }
+
         // Sync frame — the initial embed may have happened when the container had zero bounds.
         if surfaceView.superview === container,
            container.bounds.size.width > 0,

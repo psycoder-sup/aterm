@@ -22,6 +22,22 @@ struct WorkspaceCommands: Commands {
                 }
             }
             .keyboardShortcut(.delete, modifiers: [.command, .shift])
+
+            Divider()
+
+            Button("Previous Space") {
+                if let controller = windowCoordinator.controllerForKeyWindow() {
+                    controller.workspaceCollection.activeSpaceCollection?.previousSpace()
+                }
+            }
+            .keyboardShortcut(.leftArrow, modifiers: [.command, .shift])
+
+            Button("Next Space") {
+                if let controller = windowCoordinator.controllerForKeyWindow() {
+                    controller.workspaceCollection.activeSpaceCollection?.nextSpace()
+                }
+            }
+            .keyboardShortcut(.rightArrow, modifiers: [.command, .shift])
         }
     }
 }

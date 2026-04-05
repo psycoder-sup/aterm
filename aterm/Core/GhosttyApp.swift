@@ -24,6 +24,14 @@ final class GhosttyApp: @unchecked Sendable {
     /// userInfo contains "surfaceId" (UUID) and "pwd" (String).
     static let surfacePwdNotification = Notification.Name("GhosttyApp.surfacePwd")
 
+    /// Posted when a surface's child process exits.
+    /// userInfo contains "surfaceId" (UUID) and "exitCode" (UInt32).
+    static let surfaceExitedNotification = Notification.Name("GhosttyApp.surfaceExited")
+
+    /// Posted when a surface fails to spawn (ghostty_surface_new returned nil).
+    /// userInfo contains "surfaceId" (UUID).
+    static let surfaceSpawnFailedNotification = Notification.Name("GhosttyApp.surfaceSpawnFailed")
+
     // MARK: - Initialization
 
     private init() {
@@ -239,11 +247,12 @@ final class GhosttyApp: @unchecked Sendable {
         case GHOSTTY_ACTION_SHOW_CHILD_EXITED:
             // Must dispatch async to avoid re-entrant close during callback
             let surfaceId = ctx.surfaceId
+            let exitCode = action.action.child_exited.exit_code
             DispatchQueue.main.async {
                 NotificationCenter.default.post(
-                    name: GhosttyApp.surfaceCloseNotification,
+                    name: GhosttyApp.surfaceExitedNotification,
                     object: nil,
-                    userInfo: ["surfaceId": surfaceId]
+                    userInfo: ["surfaceId": surfaceId, "exitCode": exitCode]
                 )
             }
             return true  // Return true to suppress "Press any key..." fallback

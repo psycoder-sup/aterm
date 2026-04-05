@@ -6,6 +6,7 @@ final class WorkspaceSidebarUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments.append("--ui-testing")
         app.launch()
         _ = app.windows.firstMatch.waitForExistence(timeout: 5)
     }

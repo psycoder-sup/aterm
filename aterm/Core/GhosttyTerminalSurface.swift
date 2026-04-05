@@ -53,6 +53,11 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
             Log.ghostty.error("ghostty_surface_new returned nil")
             retained.release()
             self.callbackContextRef = nil
+            NotificationCenter.default.post(
+                name: GhosttyApp.surfaceSpawnFailedNotification,
+                object: nil,
+                userInfo: ["surfaceId": id]
+            )
             return
         }
 

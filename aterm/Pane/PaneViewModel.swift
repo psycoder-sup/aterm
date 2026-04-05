@@ -13,6 +13,8 @@ final class PaneViewModel {
     private(set) var surfaces: [UUID: GhosttyTerminalSurface] = [:]
     /// Persistent NSViews keyed by pane ID. Survives SwiftUI view hierarchy changes.
     private(set) var surfaceViews: [UUID: TerminalSurfaceView] = [:]
+    /// Per-pane lifecycle state (running, exited, spawn-failed).
+    private(set) var paneStates: [UUID: PaneState] = [:]
 
     /// The container size for the split tree view, updated from the view layer.
     /// Used to compute pane frames for spatial navigation.
@@ -46,6 +48,7 @@ final class PaneViewModel {
         self.splitTree = SplitTree(paneID: initialID, workingDirectory: workingDirectory)
         self.surfaces[initialID] = surface
         self.surfaceViews[initialID] = surfaceView
+        self.paneStates[initialID] = .running
         installObservers()
     }
 
@@ -65,6 +68,7 @@ final class PaneViewModel {
         self.splitTree = splitTree
         self.surfaces = surfaces
         self.surfaceViews = surfaceViews
+        self.paneStates = Dictionary(uniqueKeysWithValues: surfaces.keys.map { ($0, PaneState.running) })
         installObservers()
     }
 
@@ -76,6 +80,29 @@ final class PaneViewModel {
                   let surfaceId = notification.userInfo?["surfaceId"] as? UUID else { return }
             guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
             self.closePane(paneID: paneID)
+        })
+
+        observers.append(NotificationCenter.default.addObserver(
+            forName: GhosttyApp.surfaceExitedNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let surfaceId = notification.userInfo?["surfaceId"] as? UUID,
+                  let exitCode = notification.userInfo?["exitCode"] as? UInt32 else { return }
+            guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
+            if exitCode == 0 {
+                self.closePane(paneID: paneID)
+            } else {
+                self.paneStates[paneID] = .exited(code: exitCode)
+            }
+        })
+
+        observers.append(NotificationCenter.default.addObserver(
+            forName: GhosttyApp.surfaceSpawnFailedNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let surfaceId = notification.userInfo?["surfaceId"] as? UUID else { return }
+            guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
+            self.paneStates[paneID] = .spawnFailed
         })
 
         observers.append(NotificationCenter.default.addObserver(
@@ -137,6 +164,10 @@ final class PaneViewModel {
         surfaceViews[paneID]
     }
 
+    func paneState(for paneID: UUID) -> PaneState {
+        paneStates[paneID] ?? .running
+    }
+
     // MARK: - Operations
 
     func splitPane(direction: SplitDirection) {
@@ -157,6 +188,7 @@ final class PaneViewModel {
 
         surfaces[newPaneID] = newSurface
         surfaceViews[newPaneID] = newSurfaceView
+        paneStates[newPaneID] = .running
     }
 
     func closePane(paneID: UUID) {
@@ -167,6 +199,7 @@ final class PaneViewModel {
         surfaces.removeValue(forKey: paneID)
         surfaceViews[paneID]?.removeFromSuperview()
         surfaceViews.removeValue(forKey: paneID)
+        paneStates.removeValue(forKey: paneID)
 
         if result == .lastPane {
             if let onEmpty {
@@ -200,6 +233,30 @@ final class PaneViewModel {
         splitTree.updateRatio(splitID: splitID, newRatio: newRatio)
     }
 
+    /// Restart the shell in an existing pane (destroy old surface, create new one).
+    func restartShell(paneID: UUID) {
+        guard let state = paneStates[paneID] else { return }
+        switch state {
+        case .exited, .spawnFailed: break
+        case .running: return
+        }
+        guard let surfaceView = surfaceViews[paneID] else { return }
+
+        surfaces[paneID]?.freeSurface()
+
+        let newSurface = GhosttyTerminalSurface()
+        surfaceView.terminalSurface = newSurface
+        surfaces[paneID] = newSurface
+        paneStates[paneID] = .running
+
+        let workingDirectory = resolveWorkingDirectory(for: paneID)
+        surfaceView.initialWorkingDirectory = workingDirectory
+
+        if surfaceView.window != nil {
+            newSurface.createSurface(view: surfaceView, workingDirectory: workingDirectory)
+        }
+    }
+
     // MARK: - Cleanup
 
     func cleanup() {
@@ -208,6 +265,7 @@ final class PaneViewModel {
         }
         surfaces.removeAll()
         surfaceViews.removeAll()
+        paneStates.removeAll()
 
         for observer in observers {
             NotificationCenter.default.removeObserver(observer)

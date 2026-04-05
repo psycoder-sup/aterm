@@ -9,7 +9,9 @@ class AtermAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         windowCoordinator.workspaceManager = workspaceManager
 
-        if let result = SessionRestorer.loadState() {
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("--ui-testing")
+
+        if !isUITesting, let result = SessionRestorer.loadState() {
             let state = result.state
             Log.persistence.info("Restoring session with \(state.workspaces.count) workspace(s)")
             // Currently single-window: all workspaces go into one WorkspaceCollection.

@@ -26,5 +26,15 @@ struct PaneView: View {
                     .allowsHitTesting(false)
             }
         }
+        .overlay {
+            let state = viewModel.paneState(for: paneID)
+            if state != .running {
+                PaneExitOverlay(
+                    state: state,
+                    onRestart: { viewModel.restartShell(paneID: paneID) },
+                    onClose: { viewModel.closePane(paneID: paneID) }
+                )
+            }
+        }
     }
 }
