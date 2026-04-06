@@ -33,6 +33,10 @@ final class PaneViewModel {
     /// Set by the owning SpaceModel so PaneViewModel doesn't need to know the hierarchy.
     var directoryFallback: (() -> String?)?
 
+    /// Hierarchy IDs for building ATERM_* environment variables.
+    /// Set by the owning SpaceModel via `wireHierarchyContext`.
+    var hierarchyContext: PaneHierarchyContext?
+
     // MARK: - Private
 
     nonisolated(unsafe) private var observers: [NSObjectProtocol] = []
@@ -179,6 +183,7 @@ final class PaneViewModel {
         let workingDirectory = resolveWorkingDirectory(for: splitTree.focusedPaneID)
 
         newSurfaceView.initialWorkingDirectory = workingDirectory
+        newSurfaceView.environmentVariables = buildEnvironmentVariables(forPaneID: newPaneID)
 
         guard splitTree.insertSplit(
             direction: direction,
@@ -251,9 +256,10 @@ final class PaneViewModel {
 
         let workingDirectory = resolveWorkingDirectory(for: paneID)
         surfaceView.initialWorkingDirectory = workingDirectory
+        surfaceView.environmentVariables = buildEnvironmentVariables(forPaneID: paneID)
 
         if surfaceView.window != nil {
-            newSurface.createSurface(view: surfaceView, workingDirectory: workingDirectory)
+            newSurface.createSurface(view: surfaceView, workingDirectory: workingDirectory, environmentVariables: surfaceView.environmentVariables)
         }
     }
 
@@ -280,6 +286,28 @@ final class PaneViewModel {
     }
 
     // MARK: - Private
+
+    /// Builds ATERM_* environment variables for a specific pane using the hierarchy context.
+    private func buildEnvironmentVariables(forPaneID paneID: UUID) -> [String: String] {
+        guard let ctx = hierarchyContext else { return [:] }
+        return EnvironmentBuilder.buildPaneEnvironment(
+            socketPath: ctx.socketPath,
+            paneID: paneID,
+            tabID: ctx.tabID,
+            spaceID: ctx.spaceID,
+            workspaceID: ctx.workspaceID,
+            cliPath: ctx.cliPath
+        )
+    }
+
+    /// Applies ATERM_* environment variables to all existing surface views.
+    /// Called after `hierarchyContext` is set.
+    func applyEnvironmentVariables() {
+        guard hierarchyContext != nil else { return }
+        for (paneID, surfaceView) in surfaceViews {
+            surfaceView.environmentVariables = buildEnvironmentVariables(forPaneID: paneID)
+        }
+    }
 
     /// Resolve working directory for a pane: inherited config (OSC 7) -> tree -> space/workspace default -> $HOME.
     private func resolveWorkingDirectory(for paneID: UUID) -> String {

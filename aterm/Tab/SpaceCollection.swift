@@ -17,6 +17,9 @@ final class SpaceCollection {
     /// The owning workspace's default directory. Propagated to new spaces.
     var workspaceDefaultDirectory: URL?
 
+    /// The owning workspace's ID. Propagated to all spaces.
+    var workspaceID: UUID?
+
     private var spaceCounter: Int = 1
 
     init(workingDirectory: String = "~") {
@@ -55,6 +58,9 @@ final class SpaceCollection {
         let tab = TabModel(name: "Tab 1", workingDirectory: workingDirectory)
         let space = SpaceModel(name: "Space \(spaceCounter)", initialTab: tab)
         space.workspaceDefaultDirectory = workspaceDefaultDirectory
+        if let workspaceID {
+            space.propagateWorkspaceID(workspaceID)
+        }
         wireSpaceClose(space)
         spaces.append(space)
         activeSpaceID = space.id
@@ -145,6 +151,14 @@ final class SpaceCollection {
             return wd
         }
         return nil
+    }
+
+    /// Updates the workspace ID on this collection and all owned spaces.
+    func propagateWorkspaceID(_ id: UUID) {
+        workspaceID = id
+        for space in spaces {
+            space.propagateWorkspaceID(id)
+        }
     }
 
     /// Updates the workspace default directory on this collection and all owned spaces.

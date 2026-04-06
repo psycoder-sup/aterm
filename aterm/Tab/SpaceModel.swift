@@ -14,6 +14,9 @@ final class SpaceModel: Identifiable {
     /// The owning workspace's default directory, set by SpaceCollection/Workspace.
     var workspaceDefaultDirectory: URL?
 
+    /// The owning workspace's ID, set via `propagateWorkspaceID` from SpaceCollection.
+    var workspaceID: UUID?
+
     /// Called when the space's last tab is closed. The owning SpaceCollection should remove this space.
     var onEmpty: (() -> Void)?
 
@@ -58,6 +61,7 @@ final class SpaceModel: Identifiable {
         let tab = TabModel(name: "Tab \(tabIndex)", workingDirectory: workingDirectory)
         wireTabClose(tab)
         wireDirectoryFallback(tab)
+        wireHierarchyContext(tab)
         tabs.append(tab)
         activeTabID = tab.id
     }
@@ -168,4 +172,30 @@ final class SpaceModel: Identifiable {
             )
         }
     }
+
+    private func wireHierarchyContext(_ tab: TabModel) {
+        guard let workspaceID else { return }
+        let context = PaneHierarchyContext(
+            socketPath: IPCServer.socketPath,
+            workspaceID: workspaceID,
+            spaceID: id,
+            tabID: tab.id,
+            cliPath: Self.cliPath
+        )
+        tab.paneViewModel.hierarchyContext = context
+        tab.paneViewModel.applyEnvironmentVariables()
+    }
+
+    /// Updates the workspace ID and wires hierarchy context for all existing tabs.
+    func propagateWorkspaceID(_ id: UUID) {
+        self.workspaceID = id
+        for tab in tabs {
+            wireHierarchyContext(tab)
+        }
+    }
+
+    private static let cliPath: String = Bundle.main.executableURL!
+        .deletingLastPathComponent()
+        .appendingPathComponent("aterm-cli")
+        .path
 }

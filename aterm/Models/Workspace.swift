@@ -52,6 +52,7 @@ final class Workspace: Identifiable {
             ?? "~"
         self.spaceCollection = SpaceCollection(workingDirectory: workingDir)
         self.spaceCollection.propagateWorkspaceDefault(defaultWorkingDirectory)
+        self.spaceCollection.propagateWorkspaceID(id)
 
         self.spaceCollection.onEmpty = { [weak self] in
             self?.onEmpty?()
@@ -66,6 +67,7 @@ final class Workspace: Identifiable {
         self.createdAt = Date()
         self.spaceCollection = spaceCollection
         self.spaceCollection.propagateWorkspaceDefault(defaultWorkingDirectory)
+        self.spaceCollection.propagateWorkspaceID(id)
 
         self.spaceCollection.onEmpty = { [weak self] in
             self?.onEmpty?()
