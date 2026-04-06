@@ -95,6 +95,7 @@ targets:
     platform: macOS
     sources:
       - path: atermTests
+      - path: aterm-cli/CommandLogger.swift
     dependencies:
       - target: aterm
     settings:

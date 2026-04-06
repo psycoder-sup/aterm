@@ -9,6 +9,7 @@ final class GhosttyApp: @unchecked Sendable {
     private(set) var config: ghostty_config_t?
     private(set) var defaultBackgroundColor: NSColor = .windowBackgroundColor
     private var appObservers: [NSObjectProtocol] = []
+    private let notificationManager = NotificationManager()
 
     // MARK: - Notifications
 
@@ -306,6 +307,19 @@ final class GhosttyApp: @unchecked Sendable {
             return true
 
         case GHOSTTY_ACTION_DESKTOP_NOTIFICATION:
+            let notification = action.action.desktop_notification
+            let title = notification.title.map { String(cString: $0) }
+            let body = notification.body.map { String(cString: $0) }
+            let surfaceId = ctx.surfaceId
+            let mgr = self.notificationManager
+            Task { @MainActor in
+                try? await mgr.sendNotification(
+                    message: body ?? "",
+                    title: title,
+                    subtitle: nil,
+                    paneID: surfaceId
+                )
+            }
             return true
 
         default:

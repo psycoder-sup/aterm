@@ -20,6 +20,7 @@ private func sendRequest(command: String, params: [String: IPCValue] = [:]) thro
 private func handleCreateResponse(_ response: IPCResponse) throws {
     if response.ok {
         if let id = response.result?["id"]?.stringValue {
+            CommandContext.lastCreateId = id
             print(id)
         }
     } else if let error = response.error {

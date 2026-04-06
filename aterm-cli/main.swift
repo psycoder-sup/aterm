@@ -5,6 +5,7 @@ struct AtermCLI: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "aterm",
         abstract: "Control the aterm terminal emulator from within its shell sessions.",
+        discussion: "Run commands from within an aterm terminal session to manage workspaces, spaces, tabs, and panes. Requires the ATERM_SOCKET environment variable set by the aterm app.",
         version: "0.1.0",
         subcommands: [
             Ping.self,
@@ -87,14 +88,34 @@ struct Ping: ParsableCommand {
     }
 }
 
+// MARK: - Command Context
+
+/// Shared mutable state for capturing command results (single-threaded CLI).
+enum CommandContext {
+    nonisolated(unsafe) static var lastCreateId: String?
+}
+
 // MARK: - Entry Point
+
+let cliStartTime = ContinuousClock.now
+let commandString = ProcessInfo.processInfo.arguments.dropFirst().joined(separator: " ")
 
 do {
     var command = try AtermCLI.parseAsRoot()
     try command.run()
+    CommandLogger.log(command: commandString, exitCode: 0,
+                      result: CommandContext.lastCreateId, error: nil,
+                      startTime: cliStartTime)
 } catch let error as CLIError {
+    CommandLogger.log(command: commandString, exitCode: error.exitCode,
+                      result: nil, error: error.localizedDescription,
+                      startTime: cliStartTime)
     FileHandle.standardError.write(Data("Error: \(error.localizedDescription)\n".utf8))
     exit(error.exitCode)
 } catch {
+    let cleanExit = error is CleanExit
+    CommandLogger.log(command: commandString, exitCode: cleanExit ? 0 : 1,
+                      result: nil, error: cleanExit ? nil : error.localizedDescription,
+                      startTime: cliStartTime)
     AtermCLI.exit(withError: error)
 }
