@@ -33,21 +33,14 @@ final class TerminalSurfaceView: NSView {
     private var trackingArea: NSTrackingArea?
 
     // MARK: - Layer Setup
-
-    override var wantsUpdateLayer: Bool { true }
-
-    override func makeBackingLayer() -> CALayer {
-        let metalLayer = CAMetalLayer()
-        metalLayer.pixelFormat = .bgra8Unorm
-        metalLayer.isOpaque = false
-        metalLayer.framebufferOnly = false
-        return metalLayer
-    }
+    // NOTE: Do NOT override makeBackingLayer or set wantsLayer here.
+    // Ghostty's Metal renderer creates its own IOSurfaceLayer and assigns it
+    // to this view's `layer` property, then sets `wantsLayer = true` to make
+    // it a layer-hosting view. Pre-setting wantsLayer would make it layer-backed
+    // instead, causing ghostty's layer assignment to be ignored.
 
     init() {
         super.init(frame: .zero)
-        wantsLayer = true
-        layer?.masksToBounds = true
     }
 
     @available(*, unavailable)
@@ -91,6 +84,14 @@ final class TerminalSurfaceView: NSView {
     override func viewDidChangeBackingProperties() {
         super.viewDidChangeBackingProperties()
         guard let surface = terminalSurface?.surface else { return }
+
+        // Sync contentsScale so the compositor doesn't rescale Metal output.
+        if let window {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer?.contentsScale = window.backingScaleFactor
+            CATransaction.commit()
+        }
 
         let scale = window?.backingScaleFactor ?? 2.0
         ghostty_surface_set_content_scale(surface, Double(scale), Double(scale))

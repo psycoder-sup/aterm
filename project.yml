@@ -49,10 +49,10 @@ targets:
         outputFiles:
           - $(BUILT_PRODUCTS_DIR)/aterm.app/Contents/MacOS/aterm-cli
       - script: |
-          GHOSTTY_RESOURCES="$SRCROOT/.ghostty-src/zig-out/share/ghostty"
-          DEST="$BUILT_PRODUCTS_DIR/aterm.app/Contents/Resources/ghostty"
-          mkdir -p "$DEST"
-          rsync -a --delete "$GHOSTTY_RESOURCES/" "$DEST/"
+          SHARE="$SRCROOT/.ghostty-src/zig-out/share"
+          RESOURCES="$BUILT_PRODUCTS_DIR/aterm.app/Contents/Resources"
+          rsync -a --delete "$SHARE/ghostty/" "$RESOURCES/ghostty/"
+          rsync -a --delete "$SHARE/terminfo/" "$RESOURCES/terminfo/"
         name: Bundle Ghostty Resources
     settings:
       base:
