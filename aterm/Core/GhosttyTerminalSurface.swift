@@ -16,7 +16,7 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
     /// - Parameters:
     ///   - view: The NSView that hosts the surface.
     ///   - workingDirectory: Optional initial working directory for the shell.
-    func createSurface(view: TerminalSurfaceView, workingDirectory: String? = nil) {
+    func createSurface(view: TerminalSurfaceView, workingDirectory: String? = nil, environmentVariables: [String: String] = [:]) {
         guard let ghosttyApp = GhosttyApp.shared.app else {
             Log.ghostty.error("Cannot create surface: GhosttyApp not initialized")
             return
@@ -43,12 +43,30 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
         config.scale_factor = scaleFactor
         config.context = GHOSTTY_SURFACE_CONTEXT_WINDOW
 
-        // Create surface inside withCString so the working_directory pointer stays alive
+        // Build C array of env vars. strdup keeps strings alive until defer { free }.
+        var cStrings: [UnsafeMutablePointer<CChar>] = []
+        defer { cStrings.forEach { free($0) } }
+
+        var envVars: [ghostty_env_var_s] = []
+        for (key, value) in environmentVariables {
+            let cKey = strdup(key)!
+            let cValue = strdup(value)!
+            cStrings.append(cKey)
+            cStrings.append(cValue)
+            envVars.append(ghostty_env_var_s(key: cKey, value: cValue))
+        }
+
+        // Create surface inside withCString / withUnsafeMutableBufferPointer
+        // so all C pointers stay alive for the duration of ghostty_surface_new.
         let clock = ContinuousClock()
         let surfaceStart = clock.now
-        let created: ghostty_surface_t? = workingDirectory.withCString { cWd in
-            config.working_directory = cWd
-            return ghostty_surface_new(ghosttyApp, &config)
+        let created: ghostty_surface_t? = envVars.withUnsafeMutableBufferPointer { envBuffer in
+            config.env_vars = envBuffer.baseAddress
+            config.env_var_count = envBuffer.count
+            return workingDirectory.withCString { cWd in
+                config.working_directory = cWd
+                return ghostty_surface_new(ghosttyApp, &config)
+            }
         }
         let surfaceMs = Double((clock.now - surfaceStart).components.attoseconds) / 1e15
 
