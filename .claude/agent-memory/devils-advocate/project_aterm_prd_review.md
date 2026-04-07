@@ -1,8 +1,29 @@
 ---
 name: aterm PRD review status
-description: Status and key findings from devil's advocate reviews of aterm PRDs (workspace-sidebar v1.1 scored 0.93, implementation-ready)
+description: Status and key findings from devil's advocate reviews of aterm PRDs (worktree-spaces v1.0 scored 0.72, workspace-sidebar v1.1 scored 0.93)
 type: project
 ---
+
+## Worktree Spaces PRD
+
+Reviewed worktree-spaces-prd v1.1 on 2026-04-07. Score: 0.82/1.0 (up from 0.72 on v1.0).
+
+**Why:** All 5 required fixes from v1.0 addressed. Two new Major issues from the "type into terminal" execution model.
+
+**v1.0 fixes verified:**
+- FR-027: duplicate Space detection with `"existed"` flag -- properly specified
+- FR-028: OSC 7 shell readiness + fallback delay -- grounded in existing `surfacePwdNotification`
+- FR-010: main worktree source via `git worktree list --porcelain` -- explicit
+- FR-011/012/013: create Space first, run setup visibly, then apply layout -- well-sequenced
+- FR-014: cancel mechanism (Escape + button) -- present
+
+**Remaining issues (Major, not blocking):**
+1. Initial pane reuse during layout application underspecified -- which layout pane inherits the setup terminal? Need explicit mapping rule.
+2. FR-012 "stop on non-zero exit" is unreliable when commands are typed into terminal -- aterm has no exit code access from interactively-typed commands. Either specify detection mechanism or soften the requirement.
+
+**Minor:** Escape key conflicts with terminal input during setup cancel (recommend Cmd+. or sidebar button only). OQ#2 (.gitignore) should be resolved before implementation.
+
+**How to apply:** If v1.2 review requested, verify the 2 Major issues above are addressed.
 
 ## Workspace Sidebar PRD
 
