@@ -89,6 +89,20 @@ extension PaneNode {
             return first.firstLeaf()
         }
     }
+
+    /// Finds the ID of the split node that directly contains a leaf with the given pane ID.
+    /// Used after `splitPane()` to locate the newly created split for ratio updates.
+    func findDirectParentSplitID(of paneID: UUID) -> UUID? {
+        switch self {
+        case .leaf:
+            return nil
+        case .split(let id, _, _, let first, let second):
+            if case .leaf(let leafID, _) = first, leafID == paneID { return id }
+            if case .leaf(let leafID, _) = second, leafID == paneID { return id }
+            return first.findDirectParentSplitID(of: paneID)
+                ?? second.findDirectParentSplitID(of: paneID)
+        }
+    }
 }
 
 // MARK: - Tree Transformation
