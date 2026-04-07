@@ -144,4 +144,61 @@ struct IPCCommandHandlerTests {
         #expect(response.error?.code == 1)
         #expect(response.error?.message.contains("Invalid pane UUID") == true)
     }
+
+    // MARK: - Worktree Commands
+
+    @Test @MainActor func worktreeCreateMissingBranchNameReturnsError() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let request = IPCRequest(version: 1, command: "worktree.create", params: [:], env: dummyEnv)
+        let response = await handler.handle(request)
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+        #expect(response.error?.message.contains("Missing required parameter: branchName") == true)
+    }
+
+    @Test @MainActor func worktreeRemoveMissingSpaceIdReturnsError() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let request = IPCRequest(version: 1, command: "worktree.remove", params: [:], env: dummyEnv)
+        let response = await handler.handle(request)
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+        #expect(response.error?.message.contains("Missing required parameter: spaceId") == true)
+    }
+
+    @Test @MainActor func worktreeRemoveInvalidUUIDReturnsError() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let request = IPCRequest(version: 1, command: "worktree.remove", params: ["spaceId": .string("not-a-uuid")], env: dummyEnv)
+        let response = await handler.handle(request)
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+        #expect(response.error?.message.contains("Invalid UUID") == true)
+    }
+
+    @Test @MainActor func worktreeCreateWithNoWindowReturnsError() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let request = IPCRequest(
+            version: 1,
+            command: "worktree.create",
+            params: ["branchName": .string("feature/test")],
+            env: dummyEnv
+        )
+        let response = await handler.handle(request)
+        // No windows open, so orchestrator can't resolve a workspace or repo
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+    }
+
+    @Test @MainActor func worktreeRemoveNonexistentSpaceSucceeds() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let nonexistentId = UUID().uuidString
+        let request = IPCRequest(
+            version: 1,
+            command: "worktree.remove",
+            params: ["spaceId": .string(nonexistentId)],
+            env: dummyEnv
+        )
+        let response = await handler.handle(request)
+        // removeWorktreeSpace returns early (no-op) when space not found
+        #expect(response.ok == true)
+    }
 }
