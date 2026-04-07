@@ -25,16 +25,16 @@ struct WorkspaceCommands: Commands {
 
             Divider()
 
-            Button("Previous Space") {
+            Button("Previous Workspace") {
                 if let controller = windowCoordinator.controllerForKeyWindow() {
-                    controller.workspaceCollection.activeSpaceCollection?.previousSpace()
+                    controller.workspaceCollection.previousWorkspace()
                 }
             }
             .keyboardShortcut(.leftArrow, modifiers: [.command, .shift])
 
-            Button("Next Space") {
+            Button("Next Workspace") {
                 if let controller = windowCoordinator.controllerForKeyWindow() {
-                    controller.workspaceCollection.activeSpaceCollection?.nextSpace()
+                    controller.workspaceCollection.nextWorkspace()
                 }
             }
             .keyboardShortcut(.rightArrow, modifiers: [.command, .shift])

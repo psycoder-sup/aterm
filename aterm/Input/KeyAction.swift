@@ -14,7 +14,9 @@ enum KeyAction: Hashable {
     case previousSpace
     case newSpace
 
-    // Workspace operations
+    // Workspace navigation
+    case nextWorkspace
+    case previousWorkspace
     case newWorkspace
     case closeWorkspace
     // Sidebar

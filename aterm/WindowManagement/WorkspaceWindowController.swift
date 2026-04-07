@@ -97,6 +97,12 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
             }
 
             switch action {
+            case .nextWorkspace:
+                self.workspaceCollection.nextWorkspace()
+                return nil
+            case .previousWorkspace:
+                self.workspaceCollection.previousWorkspace()
+                return nil
             case .newWorkspace:
                 self.workspaceCollection.createWorkspace()
                 return nil
@@ -138,10 +144,6 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
             case .newSpace:
                 let wd = collection.resolveWorkingDirectory()
                 collection.createSpace(workingDirectory: wd)
-            case .nextSpace:
-                collection.nextSpace()
-            case .previousSpace:
-                collection.previousSpace()
             default:
                 return event
             }
