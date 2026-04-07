@@ -10,6 +10,9 @@ packages:
   swift-argument-parser:
     url: https://github.com/apple/swift-argument-parser
     from: "1.5.0"
+  TOMLKit:
+    url: https://github.com/LebJe/TOMLKit
+    from: "0.6.0"
 
 settings:
   base:
@@ -41,16 +44,18 @@ targets:
           - "Vendor/**"
     dependencies:
       - target: aterm-cli
+      - package: TOMLKit
+        product: TOMLKit
     postCompileScripts:
-      - script: cp -f "$BUILT_PRODUCTS_DIR/aterm-cli" "$BUILT_PRODUCTS_DIR/aterm.app/Contents/MacOS/aterm-cli"
+      - script: cp -f "$BUILT_PRODUCTS_DIR/aterm-cli" "$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/MacOS/aterm-cli"
         name: Bundle aterm-cli
         inputFiles:
           - $(BUILT_PRODUCTS_DIR)/aterm-cli
         outputFiles:
-          - $(BUILT_PRODUCTS_DIR)/aterm.app/Contents/MacOS/aterm-cli
+          - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/MacOS/aterm-cli
       - script: |
           SHARE="$SRCROOT/.ghostty-src/zig-out/share"
-          RESOURCES="$BUILT_PRODUCTS_DIR/aterm.app/Contents/Resources"
+          RESOURCES="$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources"
           rsync -a --delete "$SHARE/ghostty/" "$RESOURCES/ghostty/"
           rsync -a --delete "$SHARE/terminfo/" "$RESOURCES/terminfo/"
         name: Bundle Ghostty Resources
@@ -96,6 +101,13 @@ targets:
           - -lc
           - -lc++
           - -framework Carbon
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.aterm.app.debug
+          PRODUCT_NAME: aterm-debug
+          PRODUCT_MODULE_NAME: aterm
+          INFOPLIST_KEY_CFBundleName: Aterm (debug)
+          INFOPLIST_KEY_CFBundleDisplayName: Aterm (debug)
 
   atermTests:
     type: bundle.unit-test
@@ -113,6 +125,9 @@ targets:
         BUNDLE_LOADER: $(TEST_HOST)
         HEADER_SEARCH_PATHS:
           - $(SRCROOT)/aterm/Vendor/GhosttyKit.xcframework/macos-arm64/Headers
+      configs:
+        Debug:
+          TEST_HOST: $(BUILT_PRODUCTS_DIR)/aterm-debug.app/Contents/MacOS/aterm-debug
 
   aterm-cli:
     type: tool

@@ -8,4 +8,5 @@ enum Log {
     static let lifecycle = Logger(subsystem: "com.aterm.app", category: "lifecycle")
     static let perf = Logger(subsystem: "com.aterm.app", category: "perf")
     static let ipc = Logger(subsystem: "com.aterm.app", category: "ipc")
+    static let worktree = Logger(subsystem: "com.aterm.app", category: "worktree")
 }

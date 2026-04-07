@@ -16,6 +16,7 @@
 		11CBD8B4561751391BE93A77 /* TabModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452B783CB449086E5D923E97 /* TabModel.swift */; };
 		1DAF6336293C438B871C080C /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = A7C619F05B65CEEEF2A905F2 /* ArgumentParser */; };
 		21129CAC4F9FB71352270132 /* AppMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2929C3B009B3492939F7EDA5 /* AppMetrics.swift */; };
+		21C7E9ABDD33C5F6A834CD51 /* WorktreeConfigParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5852A70BFFBFDBCFCD49602D /* WorktreeConfigParserTests.swift */; };
 		23288F245641D955D596DB28 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F73A1A8A7548A7BE8CDBA8B /* Workspace.swift */; };
 		23E6FCC7F63483A5101ED825 /* QuitConfirmationDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE28AE4D312C107F8B27B01B /* QuitConfirmationDialog.swift */; };
 		2477754EB0333D33BD3C8195 /* SessionStateMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87EEFD338CAFFD633A2CDC4 /* SessionStateMigrator.swift */; };
@@ -57,16 +58,19 @@
 		826A6E59FB8CC958F2A2893F /* TerminalContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE60D02A012008C5B7C077A /* TerminalContentView.swift */; };
 		82EBBC9FAF63F258238882C3 /* WorkspaceSidebarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5716A482C4F441379F8F7B4F /* WorkspaceSidebarUITests.swift */; };
 		83494DD88752D8AA8C48C305 /* WorkspaceWindowContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923EAE0B91895B3AB2AA237C /* WorkspaceWindowContent.swift */; };
+		83E3D05E57EF68D4AB7E5AFF /* WorktreeConfigParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C660831771BE1223339F0E /* WorktreeConfigParser.swift */; };
 		85110F0B31FC6E958B8AD25A /* WorkingDirectoryResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C0A1AB2246BF762531CAD0 /* WorkingDirectoryResolver.swift */; };
 		879AA3819E8D60755252840F /* SidebarWorkspaceHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BACDFFE2171973237C91C5C /* SidebarWorkspaceHeaderView.swift */; };
 		881BBA43AD61A28FB26FE14F /* ProcessDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16E08D92624E4FE357EC5F3C /* ProcessDetectorTests.swift */; };
 		89A719D2D845CB585459F3EA /* CLIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45DC19B531A185F80602332 /* CLIError.swift */; };
 		8C427B77432F348EF209078F /* PaneState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C1556FA2FEBFADCC32D63 /* PaneState.swift */; };
 		8D8B091F86D274F1F4526892 /* CommandLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE91C8E754ABF3CB896D6229 /* CommandLogger.swift */; };
+		94D4CB1B9D12E3B0F9C25E89 /* WorktreeError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1578993ADEAB641DB2CC0449 /* WorktreeError.swift */; };
 		952DEFA5F0C6826E5E60DA65 /* TabBarItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB98C5FAE75C8562E5011DD1 /* TabBarItemView.swift */; };
 		9731E85D5FDC27DDB3C2EB53 /* SplitNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9271C21D13FE00F8A8B08D4 /* SplitNavigationTests.swift */; };
 		99873394A36CDE5B6E903DB0 /* InlineRenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64EC6247296A9294A831FE1 /* InlineRenameView.swift */; };
 		9D3E06F804B81AE8E52AC93A /* OutputFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE9EE7ED818AD6C7F2790E7 /* OutputFormatter.swift */; };
+		9F9CE79E6BF9DD44DBA5510E /* TOMLKit in Frameworks */ = {isa = PBXBuildFile; productRef = 761108C9658D610D14943B23 /* TOMLKit */; };
 		A1ABF62C9D8F038822450434 /* DefaultWorkingDirectoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E457AD7AF4D832679DC4C447 /* DefaultWorkingDirectoryTests.swift */; };
 		A53F3543A1A2B8BC8917AA7E /* SplitNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48DC736C48CABA5B06A27528 /* SplitNavigation.swift */; };
 		A69CB1D7E9A0868FFAC6C06B /* SidebarState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8869EF50390029EA0A6C256F /* SidebarState.swift */; };
@@ -74,6 +78,7 @@
 		AABC59D43FBCBA7EEB978E4D /* DebugOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B0BE2D198C7A0D268D6064 /* DebugOverlayView.swift */; };
 		AD015DC13689C71E9B609CC8 /* SplitTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 246FA3D2D1A4503A3F208ADD /* SplitTree.swift */; };
 		B19CCEC94508391BF11FE9BD /* IPCMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E69FB5BC302626AE758442 /* IPCMessageTests.swift */; };
+		B501D0DEA8A42DCC08D6F2CE /* WorktreeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DB36513935062E116C27879 /* WorktreeConfig.swift */; };
 		B7A094E67D56DF927E2DB5ED /* AtermApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003B4EB9F499098DBD761D58 /* AtermApp.swift */; };
 		B838A6423B7E0C831506DDE9 /* CommandRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A783818BBF09E29D87E055 /* CommandRouter.swift */; };
 		B9CD36DFA0FE29A070816343 /* ANSIStripperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5F904991148280D4B79C115 /* ANSIStripperTests.swift */; };
@@ -141,6 +146,8 @@
 		0A5A4670E146E84A6D24B446 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		0C93E2FA99F3437C85998B38 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0CF8721CBBC576869E5CFCDC /* ProcessDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessDetector.swift; sourceTree = "<group>"; };
+		13C660831771BE1223339F0E /* WorktreeConfigParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorktreeConfigParser.swift; sourceTree = "<group>"; };
+		1578993ADEAB641DB2CC0449 /* WorktreeError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorktreeError.swift; sourceTree = "<group>"; };
 		16E08D92624E4FE357EC5F3C /* ProcessDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessDetectorTests.swift; sourceTree = "<group>"; };
 		187D85C4E1610BE5622BD901 /* CloseConfirmationDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloseConfirmationDialog.swift; sourceTree = "<group>"; };
 		1B237FEE621E61F5BF0159CB /* RestoreMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreMetrics.swift; sourceTree = "<group>"; };
@@ -170,7 +177,9 @@
 		56E0078285EDD225AC6B38A6 /* SessionRestorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorerTests.swift; sourceTree = "<group>"; };
 		5716A482C4F441379F8F7B4F /* WorkspaceSidebarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSidebarUITests.swift; sourceTree = "<group>"; };
 		572175B5CC97E13C714B239E /* SplitTreeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitTreeView.swift; sourceTree = "<group>"; };
+		5852A70BFFBFDBCFCD49602D /* WorktreeConfigParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorktreeConfigParserTests.swift; sourceTree = "<group>"; };
 		59E41D1C9BB74523F480F034 /* EnvironmentBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentBuilder.swift; sourceTree = "<group>"; };
+		5DB36513935062E116C27879 /* WorktreeConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorktreeConfig.swift; sourceTree = "<group>"; };
 		5F29973BF00B9522849B08FE /* PaneViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaneViewModel.swift; sourceTree = "<group>"; };
 		68C0A1AB2246BF762531CAD0 /* WorkingDirectoryResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkingDirectoryResolver.swift; sourceTree = "<group>"; };
 		6A12E56E28418852B337D523 /* WorkspaceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceManager.swift; sourceTree = "<group>"; };
@@ -248,6 +257,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3F63FF66B0F0DDC850740454 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9F9CE79E6BF9DD44DBA5510E /* TOMLKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -281,6 +298,7 @@
 				6C4411415871C2F5695DE648 /* Utilities */,
 				FC75859E24B35E634AF7FF5F /* View */,
 				89A66EDE3F2EDD4ACC4A0CF5 /* WindowManagement */,
+				318F05B0EADEC32D86301ADC /* Worktree */,
 			);
 			path = aterm;
 			sourceTree = "<group>";
@@ -294,6 +312,16 @@
 				C0B2831A043F933D39565FD3 /* atermUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		318F05B0EADEC32D86301ADC /* Worktree */ = {
+			isa = PBXGroup;
+			children = (
+				5DB36513935062E116C27879 /* WorktreeConfig.swift */,
+				13C660831771BE1223339F0E /* WorktreeConfigParser.swift */,
+				1578993ADEAB641DB2CC0449 /* WorktreeError.swift */,
+			);
+			path = Worktree;
 			sourceTree = "<group>";
 		};
 		64D23BEF9866BD2AB70D7DDA /* aterm-cli */ = {
@@ -411,6 +439,7 @@
 				43F2F435B72E9E4B6A50960E /* SplitTreeTests.swift */,
 				6D430CB08BB4BA79BBC72649 /* WorkingDirectoryResolverTests.swift */,
 				DA9128BA20A54300EFE5FB7E /* WorkspaceTests.swift */,
+				5852A70BFFBFDBCFCD49602D /* WorktreeConfigParserTests.swift */,
 			);
 			path = atermTests;
 			sourceTree = "<group>";
@@ -586,6 +615,7 @@
 				550B8EA94A21B227BAD25D04 /* Bundle aterm-cli */,
 				EBA79DC170A5B43D7B9E7DAB /* Bundle Ghostty Resources */,
 				78F62DBDDD415A1F2080CACF /* Resources */,
+				3F63FF66B0F0DDC850740454 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -594,6 +624,7 @@
 			);
 			name = aterm;
 			packageProductDependencies = (
+				761108C9658D610D14943B23 /* TOMLKit */,
 			);
 			productName = aterm;
 			productReference = CDF7F8753E641B0600CC34B9 /* aterm.app */;
@@ -614,7 +645,6 @@
 				};
 			};
 			buildConfigurationList = 80FB72C6B9C1583AE8925302 /* Build configuration list for PBXProject "aterm" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -624,9 +654,11 @@
 			mainGroup = 6D6A1E5FBCD6EB4DAE4F665C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				D63F881061E01B27FEB4BDE6 /* XCRemoteSwiftPackageReference "TOMLKit" */,
 				771584127090605537743563 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 29B1853D43339785DE006E47 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -665,11 +697,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/aterm.app/Contents/MacOS/aterm-cli",
+				"$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/MacOS/aterm-cli",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -f \"$BUILT_PRODUCTS_DIR/aterm-cli\" \"$BUILT_PRODUCTS_DIR/aterm.app/Contents/MacOS/aterm-cli\"";
+			shellScript = "cp -f \"$BUILT_PRODUCTS_DIR/aterm-cli\" \"$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/MacOS/aterm-cli\"";
 		};
 		EBA79DC170A5B43D7B9E7DAB /* Bundle Ghostty Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -687,7 +719,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "SHARE=\"$SRCROOT/.ghostty-src/zig-out/share\"\nRESOURCES=\"$BUILT_PRODUCTS_DIR/aterm.app/Contents/Resources\"\nrsync -a --delete \"$SHARE/ghostty/\" \"$RESOURCES/ghostty/\"\nrsync -a --delete \"$SHARE/terminfo/\" \"$RESOURCES/terminfo/\"\n";
+			shellScript = "SHARE=\"$SRCROOT/.ghostty-src/zig-out/share\"\nRESOURCES=\"$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources\"\nrsync -a --delete \"$SHARE/ghostty/\" \"$RESOURCES/ghostty/\"\nrsync -a --delete \"$SHARE/terminfo/\" \"$RESOURCES/terminfo/\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -739,6 +771,7 @@
 				4240794AF2989F039A139188 /* SplitTreeTests.swift in Sources */,
 				C10A762122E3E3DAE7288927 /* WorkingDirectoryResolverTests.swift in Sources */,
 				7041FDD37A7E955107826C45 /* WorkspaceTests.swift in Sources */,
+				21C7E9ABDD33C5F6A834CD51 /* WorktreeConfigParserTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -814,6 +847,9 @@
 				5D9BABA189C7FD43E6DD91C0 /* WorkspaceManager.swift in Sources */,
 				83494DD88752D8AA8C48C305 /* WorkspaceWindowContent.swift in Sources */,
 				03200C8562367548336670F1 /* WorkspaceWindowController.swift in Sources */,
+				B501D0DEA8A42DCC08D6F2CE /* WorktreeConfig.swift in Sources */,
+				83E3D05E57EF68D4AB7E5AFF /* WorktreeConfigParser.swift in Sources */,
+				94D4CB1B9D12E3B0F9C25E89 /* WorktreeError.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -854,7 +890,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.aterm.tests;
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aterm.app/Contents/MacOS/aterm";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aterm-debug.app/Contents/MacOS/aterm-debug";
 			};
 			name = Debug;
 		};
@@ -921,7 +957,8 @@
 					"$(SRCROOT)/aterm/Vendor/GhosttyKit.xcframework/macos-arm64/Headers",
 				);
 				INFOPLIST_FILE = "";
-				INFOPLIST_KEY_CFBundleDisplayName = aterm;
+				INFOPLIST_KEY_CFBundleDisplayName = "Aterm (debug)";
+				INFOPLIST_KEY_CFBundleName = "Aterm (debug)";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_UTExportedTypeDeclarations = "(\n  {\n    UTTypeIdentifier = \"com.aterm.tab-drag-item\";\n    UTTypeConformsTo = (\"public.data\");\n    UTTypeDescription = \"aterm Tab\";\n    UTTypeTagSpecification = {};\n  },\n  {\n    UTTypeIdentifier = \"com.aterm.space-drag-item\";\n    UTTypeConformsTo = (\"public.data\");\n    UTTypeDescription = \"aterm Space\";\n    UTTypeTagSpecification = {};\n  },\n  {\n    UTTypeIdentifier = \"com.aterm.workspace-drag-item\";\n    UTTypeConformsTo = (\"public.data\");\n    UTTypeDescription = \"aterm Workspace\";\n    UTTypeTagSpecification = {};\n  }\n)\n";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -937,8 +974,9 @@
 					"-lc++",
 					"-framework Carbon",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.aterm.app;
-				PRODUCT_NAME = aterm;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aterm.app.debug;
+				PRODUCT_MODULE_NAME = aterm;
+				PRODUCT_NAME = "aterm-debug";
 				SDKROOT = macosx;
 				SWIFT_OBJC_BRIDGING_HEADER = "aterm/aterm-Bridging-Header.h";
 			};
@@ -1192,9 +1230,22 @@
 				minimumVersion = 1.5.0;
 			};
 		};
+		D63F881061E01B27FEB4BDE6 /* XCRemoteSwiftPackageReference "TOMLKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/LebJe/TOMLKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		761108C9658D610D14943B23 /* TOMLKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D63F881061E01B27FEB4BDE6 /* XCRemoteSwiftPackageReference "TOMLKit" */;
+			productName = TOMLKit;
+		};
 		A7C619F05B65CEEEF2A905F2 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 771584127090605537743563 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
