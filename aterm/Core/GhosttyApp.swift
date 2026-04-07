@@ -33,6 +33,11 @@ final class GhosttyApp: @unchecked Sendable {
     /// userInfo contains "surfaceId" (UUID).
     static let surfaceSpawnFailedNotification = Notification.Name("GhosttyApp.surfaceSpawnFailed")
 
+    /// Posted when a pane should show a bell indicator.
+    /// userInfo contains "surfaceId" (UUID) from ghostty callbacks,
+    /// or "paneId" (UUID) from IPC notify commands.
+    static let surfaceBellNotification = Notification.Name("GhosttyApp.surfaceBell")
+
     // MARK: - Initialization
 
     private init() {
@@ -255,6 +260,14 @@ final class GhosttyApp: @unchecked Sendable {
 
         case GHOSTTY_ACTION_RING_BELL:
             NSSound.beep()
+            let surfaceId = ctx.surfaceId
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: GhosttyApp.surfaceBellNotification,
+                    object: nil,
+                    userInfo: ["surfaceId": surfaceId]
+                )
+            }
             return true
 
         case GHOSTTY_ACTION_SHOW_CHILD_EXITED:

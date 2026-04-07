@@ -13,6 +13,10 @@ struct PaneView: View {
         isFocused && viewModel.splitTree.leafCount > 1
     }
 
+    private var showBellGlow: Bool {
+        viewModel.bellNotifications.contains(paneID)
+    }
+
     var body: some View {
         TerminalContentView(
             paneID: paneID,
@@ -21,11 +25,18 @@ struct PaneView: View {
         )
         .overlay {
             if showFocusBorder {
-                Rectangle()
-                    .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: 2)
-                    .allowsHitTesting(false)
+                RainbowBorder()
+                    .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: showFocusBorder)
+        .overlay {
+            if showBellGlow {
+                RainbowGlow()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showBellGlow)
         .overlay {
             let state = viewModel.paneState(for: paneID)
             if state != .running {

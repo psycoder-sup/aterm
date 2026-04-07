@@ -458,6 +458,11 @@ final class IPCCommandHandler {
                 subtitle: subtitle,
                 paneID: paneId
             )
+            NotificationCenter.default.post(
+                name: GhosttyApp.surfaceBellNotification,
+                object: nil,
+                userInfo: ["paneId": paneId]
+            )
             return .success()
         } catch NotificationError.permissionDenied {
             return .failure(

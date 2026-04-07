@@ -16,6 +16,9 @@ final class PaneViewModel {
     /// Per-pane lifecycle state (running, exited, spawn-failed).
     private(set) var paneStates: [UUID: PaneState] = [:]
 
+    /// Panes that have an active bell notification (glow indicator).
+    private(set) var bellNotifications: Set<UUID> = []
+
     /// The container size for the split tree view, updated from the view layer.
     /// Used to compute pane frames for spatial navigation.
     var containerSize: CGSize = .zero
@@ -130,6 +133,24 @@ final class PaneViewModel {
             guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
             self.splitTree.updateWorkingDirectory(paneID: paneID, newWorkingDirectory: pwd)
         })
+
+        observers.append(NotificationCenter.default.addObserver(
+            forName: GhosttyApp.surfaceBellNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            let paneID: UUID?
+            if let directPaneId = notification.userInfo?["paneId"] as? UUID {
+                // From IPC (aterm-cli notify) — paneId provided directly
+                paneID = self.surfaces.keys.contains(directPaneId) ? directPaneId : nil
+            } else if let surfaceId = notification.userInfo?["surfaceId"] as? UUID {
+                // From ghostty bell callback — resolve via surface ID
+                paneID = self.paneID(forSurfaceID: surfaceId)
+            } else {
+                paneID = nil
+            }
+            guard let paneID, paneID != self.splitTree.focusedPaneID else { return }
+            self.bellNotifications.insert(paneID)
+        })
     }
 
     private static func buildPaneNode(
@@ -212,6 +233,7 @@ final class PaneViewModel {
         surfaceViews[paneID]?.removeFromSuperview()
         surfaceViews.removeValue(forKey: paneID)
         paneStates.removeValue(forKey: paneID)
+        bellNotifications.remove(paneID)
         PaneStatusManager.shared.clearStatus(paneID: paneID)
 
         if result == .lastPane {
@@ -226,6 +248,7 @@ final class PaneViewModel {
     func focusPane(paneID: UUID) {
         guard splitTree.focusedPaneID != paneID else { return }
         splitTree.focusedPaneID = paneID
+        bellNotifications.remove(paneID)
         // Update title from the newly focused pane
         // (title will update on next surfaceTitleNotification from that pane)
     }
