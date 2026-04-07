@@ -6,13 +6,61 @@ A native macOS terminal emulator built with SwiftUI. Uses the full ghostty embed
 
 - **Platform:** macOS 26
 
+## Concepts
+
+aterm organizes terminals in a 4-level hierarchy:
+
+```
+Workspace → Space → Tab → Pane (split tree)
+```
+
+- **Workspace** — Top-level organizational unit (e.g., a project). Each workspace maps to one OS window. Has a name, default working directory, and contains a `SpaceCollection`.
+- **Space** — Named group of tabs within a workspace (similar to virtual desktops). Navigated with Cmd+Shift+Arrow. Contains an ordered list of `TabModel`s.
+- **Tab** — Single tab within a space. Lightweight container that owns a `PaneViewModel` (split tree + surfaces). Displays the focused pane's title.
+- **Pane** — A single terminal session. Panes live as leaves in a binary `SplitTree` (value-type). Each pane maps 1:1 to a `GhosttyTerminalSurface` (`ghostty_surface_t`). Panes can be split horizontally or vertically.
+
+### Split Tree
+
+Pane layout is modeled as an immutable binary tree (`SplitTree` / `PaneNode`):
+- `.leaf(paneID, workingDirectory)` — a terminal pane
+- `.split(id, direction, ratio, first, second)` — a container splitting two children
+
+All mutations return new values (value semantics). `PaneViewModel` replaces the entire `splitTree` on each change. Spatial navigation between panes uses concrete layout frames, not tree position.
+
+### Working Directory Resolution
+
+Fallback chain: active pane (OSC 7) → pane node → space default → workspace default → `$HOME`.
+
+### Lifecycle
+
+Cascading close via `onEmpty` callbacks: `PaneViewModel` → `TabModel` → `SpaceModel` → `SpaceCollection` → `Workspace`.
+
 ## Architecture
 
-- **App** — `AtermApp` (SwiftUI entry point, GhosttyApp init), `TerminalWindow` (surface lifecycle, title/close handling)
-- **Core** — `GhosttyApp` (singleton wrapping `ghostty_app_t`, runtime callbacks, clipboard, tick), `GhosttyTerminalSurface` (per-terminal `ghostty_surface_t` wrapper), `ANSIStripper` (utility)
-- **View** — `TerminalContentView` (NSViewRepresentable), `TerminalSurfaceView` (NSView + CAMetalLayer, keyboard/mouse/IME forwarding to ghostty surface)
-- **Utilities** — `Logger`, `Colors`
-- **Vendor** — `GhosttyKit.xcframework` + `ghostty.h` (built from `.ghostty-src` via `scripts/build-ghostty.sh`)
+### Source Layout
+
+- `Models/` — `Workspace`, `WorkspaceCollection`, `WorkspaceManager`
+- `Tab/` — `SpaceModel`, `TabModel`, `SpaceCollection`
+- `Pane/` — `PaneViewModel`, `SplitTree`, `PaneNode`, `SplitNavigation`, `SplitLayout`
+- `Core/` — `GhosttyApp`, `GhosttyTerminalSurface`, notifications, IPC
+- `View/` — SwiftUI components (terminal, sidebar, tabs, splits)
+- `WindowManagement/` — `WorkspaceWindowController`, `WindowCoordinator`, `AtermAppDelegate`
+- `Persistence/` — Session serialization/restoration (`SessionState`)
+- `DragAndDrop/` — Drag item types for reordering workspaces/spaces/tabs
+- `Input/` — Key binding registry and handling
+- `Utilities/` — `Logger`, `Colors`, `WorkingDirectoryResolver`
+- `Vendor/` — `GhosttyKit.xcframework` + `ghostty.h` (built from `.ghostty-src` via `scripts/build-ghostty.sh`)
+
+### Key Layers
+
+- **App** — `AtermApp` (SwiftUI entry point, GhosttyApp init), `AtermAppDelegate` (lifecycle, session restoration)
+- **Window** — `WindowCoordinator` (multi-window management), `WorkspaceWindowController` (NSWindowController per window)
+- **Core** — `GhosttyApp` (singleton wrapping `ghostty_app_t`, runtime callbacks, clipboard, tick), `GhosttyTerminalSurface` (per-terminal `ghostty_surface_t` wrapper)
+- **View** — `TerminalSurfaceView` (persistent NSView + CAMetalLayer, keyboard/mouse/IME forwarding), `WorkspaceWindowContent` (SwiftUI root per window)
+
+### State Management
+
+All model classes use `@MainActor @Observable`. Ghostty surface events flow through `NotificationCenter` (surface close/exit/title/pwd/bell). `PaneHierarchyContext` carries workspace/space/tab IDs down to panes as `ATERM_*` environment variables.
 
 ## Build
 

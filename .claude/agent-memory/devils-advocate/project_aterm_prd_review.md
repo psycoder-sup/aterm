@@ -54,6 +54,30 @@ Reviewed cli-tool-prd v1.0 on 2026-04-05. Score: 0.72/1.0.
 
 **How to apply:** If v1.1 review requested, verify the 5 required fixes are addressed (multi-window resolution, name uniqueness, stale env vars, status display decision, notification permission exit code).
 
+## Claude Session Status PRD
+
+Reviewed claude-session-status-prd v1.1 on 2026-04-07. Score: 0.90/1.0 (up from 0.77 on v1.0).
+
+**Why:** All 3 Major issues from v1.0 resolved. needs_attention gap documented as accepted self-resolving behavior, matcher strings verified, icon placement fully specified in FR-019.
+
+**v1.0 Major fixes verified:**
+1. needs_attention linger: documented with concrete self-resolution explanation (Stop->idle or UserPromptSubmit->busy within seconds)
+2. Notification matcher strings: verified against Claude Code docs, cited in Appendix A note
+3. Icon placement: resolved to second line of Space row, left of status label, ~10-12pt
+
+**v1.0 Minor fixes verified:**
+- status.clear vs inactive: clarifying note added (nil vs inactive distinction)
+- active vs idle priority: rationale added (new session > passive waiting)
+- Diagnostic logging: NFR-005 added (debug-level with pane ID, old/new state)
+- OQ#2: closed referencing NG4
+
+**Remaining issues (all Minor/Nit):**
+1. Second-line visibility condition implicit -- should explicitly state "render when label OR Claude state exists"
+2. OQ#1 (color values) still open -- hue choices (blue vs purple, orange vs yellow) should be narrowed before implementation
+3. Hook configuration merging strategy unmentioned -- note that hooks are additive to existing arrays
+
+**How to apply:** PRD is implementation-ready. Remaining items are refinement-level.
+
 ## Prior PRD (aterm main PRD, unrelated)
 
 Reviewed aterm PRD v1.3 on 2026-03-24. Score: 0.87/1.0. See git history for details.
