@@ -69,6 +69,7 @@ final class WindowCoordinator {
 
     /// Finds a pane by UUID across all windows, activates its workspace/space/tab,
     /// focuses the pane, and brings the window to front.
+    /// The `id` may be a pane UUID or a Ghostty surface UUID; both are tried.
     func focusPane(id paneID: UUID) {
         for controller in controllers {
             let collection = controller.workspaceCollection
@@ -78,16 +79,40 @@ final class WindowCoordinator {
                         guard tab.paneViewModel.splitTree.root.containsLeaf(paneID: paneID) else {
                             continue
                         }
-                        collection.activateWorkspace(id: workspace.id)
-                        workspace.spaceCollection.activateSpace(id: space.id)
-                        space.activateTab(id: tab.id)
-                        tab.paneViewModel.focusPane(paneID: paneID)
-                        NSApp.activate()
-                        controller.window?.makeKeyAndOrderFront(nil)
+                        activatePane(paneID, controller: controller, workspace: workspace, space: space, tab: tab)
                         return
                     }
                 }
             }
         }
+        for controller in controllers {
+            let collection = controller.workspaceCollection
+            for workspace in collection.workspaces {
+                for space in workspace.spaceCollection.spaces {
+                    for tab in space.tabs {
+                        guard let resolved = tab.paneViewModel.paneID(forSurfaceID: paneID) else {
+                            continue
+                        }
+                        activatePane(resolved, controller: controller, workspace: workspace, space: space, tab: tab)
+                        return
+                    }
+                }
+            }
+        }
+    }
+
+    private func activatePane(
+        _ paneID: UUID,
+        controller: WorkspaceWindowController,
+        workspace: Workspace,
+        space: SpaceModel,
+        tab: TabModel
+    ) {
+        controller.workspaceCollection.activateWorkspace(id: workspace.id)
+        workspace.spaceCollection.activateSpace(id: space.id)
+        space.activateTab(id: tab.id)
+        tab.paneViewModel.focusPane(paneID: paneID)
+        NSApp.activate()
+        controller.window?.makeKeyAndOrderFront(nil)
     }
 }

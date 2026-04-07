@@ -363,7 +363,7 @@ final class PaneViewModel {
     }
 
     /// Find the pane UUID that owns a surface with the given surface ID.
-    private func paneID(forSurfaceID surfaceID: UUID) -> UUID? {
+    func paneID(forSurfaceID surfaceID: UUID) -> UUID? {
         surfaces.first(where: { $0.value.id == surfaceID })?.key
     }
 }
