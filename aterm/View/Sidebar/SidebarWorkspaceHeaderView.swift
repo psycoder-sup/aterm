@@ -39,6 +39,15 @@ struct SidebarWorkspaceHeaderView: View {
                     .scaleEffect(0.7)
             }
 
+            Button(action: onNewWorktreeSpace) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color(white: 0.4, opacity: 1))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("new-worktree-space-\(workspace.id)")
+            .accessibilityLabel("New worktree space in \(workspace.name)")
+
             Button(action: onAddSpace) {
                 Text("+")
                     .font(.system(size: 12, weight: .medium))
