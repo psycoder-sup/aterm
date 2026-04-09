@@ -39,6 +39,13 @@ final class PaneViewModel {
     /// Set by the owning SpaceModel so PaneViewModel doesn't need to know the hierarchy.
     var directoryFallback: (() -> String?)?
 
+    /// Called when a pane's working directory changes (OSC 7).
+    /// Parameters: (paneID, newDirectory).
+    var onPaneDirectoryChanged: ((UUID, String) -> Void)?
+
+    /// Called when a pane is closed. Parameter: paneID.
+    var onPaneRemoved: ((UUID) -> Void)?
+
     /// Hierarchy IDs for building ATERM_* environment variables.
     /// Set by the owning SpaceModel via `wireHierarchyContext`.
     var hierarchyContext: PaneHierarchyContext?
@@ -138,6 +145,7 @@ final class PaneViewModel {
                   let pwd = notification.userInfo?["pwd"] as? String else { return }
             guard let paneID = self.paneID(forSurfaceID: surfaceId) else { return }
             self.splitTree.updateWorkingDirectory(paneID: paneID, newWorkingDirectory: pwd)
+            self.onPaneDirectoryChanged?(paneID, pwd)
         })
 
         observers.append(NotificationCenter.default.addObserver(
@@ -247,6 +255,7 @@ final class PaneViewModel {
         bellNotifications.remove(paneID)
         restoreCommands.removeValue(forKey: paneID)
         PaneStatusManager.shared.clearStatus(paneID: paneID)
+        onPaneRemoved?(paneID)
 
         if result == .lastPane {
             if let onEmpty {
@@ -317,6 +326,8 @@ final class PaneViewModel {
     // MARK: - Cleanup
 
     func cleanup() {
+        let paneIDs = splitTree.allLeaves()
+
         for surface in surfaces.values {
             surface.freeSurface()
         }
@@ -329,6 +340,11 @@ final class PaneViewModel {
             NotificationCenter.default.removeObserver(observer)
         }
         observers.removeAll()
+
+        for paneID in paneIDs {
+            PaneStatusManager.shared.clearStatus(paneID: paneID)
+            onPaneRemoved?(paneID)
+        }
     }
 
     deinit {

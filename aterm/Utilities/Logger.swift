@@ -9,4 +9,5 @@ enum Log {
     static let perf = Logger(subsystem: "com.aterm.app", category: "perf")
     static let ipc = Logger(subsystem: "com.aterm.app", category: "ipc")
     static let worktree = Logger(subsystem: "com.aterm.app", category: "worktree")
+    static let git = Logger(subsystem: "com.aterm.app", category: "git")
 }

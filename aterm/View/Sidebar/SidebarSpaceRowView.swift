@@ -12,30 +12,71 @@ struct SidebarSpaceRowView: View {
     @State private var isRenaming = false
     @State private var lastClickTime: Date?
 
+    private func accessibilityDescription(sessions: [(paneID: UUID, state: ClaudeSessionState)]) -> String {
+        var parts: [String] = [isActive ? "selected" : "not selected"]
+
+        // Repo status descriptions (FR-070)
+        for repoID in space.gitContext.pinnedRepoOrder {
+            guard let status = space.gitContext.repoStatuses[repoID] else { continue }
+            var repoParts: [String] = []
+
+            if let branch = status.branchName {
+                repoParts.append("\(branch) branch")
+            }
+
+            if !status.diffSummary.isEmpty {
+                var changes: [String] = []
+                if status.diffSummary.modified > 0 { changes.append("\(status.diffSummary.modified) modified") }
+                if status.diffSummary.added > 0 { changes.append("\(status.diffSummary.added) added") }
+                if status.diffSummary.deleted > 0 { changes.append("\(status.diffSummary.deleted) deleted") }
+                if status.diffSummary.renamed > 0 { changes.append("\(status.diffSummary.renamed) renamed") }
+                if status.diffSummary.unmerged > 0 { changes.append("\(status.diffSummary.unmerged) unmerged") }
+                repoParts.append(changes.joined(separator: " "))
+            }
+
+            if let pr = status.prStatus {
+                repoParts.append("pull request \(pr.state.rawValue)")
+            }
+
+            // Count Claude sessions in this repo
+            let repoSessions = sessions.filter { space.gitContext.paneRepoAssignments[$0.paneID] == repoID }
+            if !repoSessions.isEmpty {
+                let needsAttention = repoSessions.filter { $0.state == .needsAttention }.count
+                let desc = "\(repoSessions.count) Claude session\(repoSessions.count == 1 ? "" : "s")"
+                if needsAttention > 0 {
+                    repoParts.append("\(desc) \(needsAttention) needs attention")
+                } else {
+                    repoParts.append(desc)
+                }
+            }
+
+            if !repoParts.isEmpty {
+                parts.append(repoParts.joined(separator: ", "))
+            }
+        }
+
+        // Non-repo sessions
+        let nonRepoSessions = sessions.filter { space.gitContext.paneRepoAssignments[$0.paneID] == nil }
+        if !nonRepoSessions.isEmpty {
+            let descriptions = nonRepoSessions.map { $0.state.rawValue }
+            parts.append("Claude sessions: \(descriptions.joined(separator: ", "))")
+        }
+
+        return parts.joined(separator: ". ")
+    }
+
     private var tabCountLabel: String {
         let count = space.tabs.count
         return count == 1 ? "1 tab" : "\(count) tabs"
     }
 
-    private var statusColor: Color {
-        if isActive {
-            Color(red: 0.35, green: 0.6, blue: 1.0).opacity(0.7)
-        } else {
-            Color(red: 0.45, green: 0.55, blue: 0.7).opacity(0.7)
-        }
-    }
-
     var body: some View {
+        let sessions = PaneStatusManager.shared.sessionStates(in: space)
+
         HStack(spacing: 8) {
             Circle()
                 .fill(isActive ? Color.green : Color(white: 0.5, opacity: 0.4))
                 .frame(width: 6, height: 6)
-
-            if space.worktreePath != nil {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            }
 
             VStack(alignment: .leading, spacing: 2) {
                 InlineRenameView(
@@ -46,13 +87,7 @@ struct SidebarSpaceRowView: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(isActive ? Color(white: 0.9) : .secondary)
 
-                if let status = PaneStatusManager.shared.latestStatus(in: space) {
-                    Text(String(status.label.prefix(50)))
-                        .font(.system(size: 10))
-                        .foregroundStyle(statusColor)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
+                SpaceStatusAreaView(sessions: sessions, space: space, isActive: isActive)
             }
 
             Spacer()
@@ -117,7 +152,7 @@ struct SidebarSpaceRowView: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("space-row-\(space.id)")
         .accessibilityLabel(space.name)
-        .accessibilityValue(isActive ? "selected" : "not selected")
+        .accessibilityValue(accessibilityDescription(sessions: sessions))
         .accessibilityHint("Double-tap to switch. Double-tap and hold to rename.")
     }
 }
