@@ -1,8 +1,12 @@
 import SwiftUI
 
 /// Displays compact count badges for non-zero git diff categories.
+/// Shows a hover popover with the full file list.
 struct GitBadgesView: View {
     let diffSummary: GitDiffSummary
+    var changedFiles: [GitChangedFile] = []
+
+    @State private var isHovering = false
 
     var body: some View {
         if !diffSummary.isEmpty {
@@ -22,6 +26,10 @@ struct GitBadgesView: View {
                 if diffSummary.unmerged > 0 {
                     badgePill(count: diffSummary.unmerged, letter: "U")
                 }
+            }
+            .onHover { isHovering = $0 }
+            .popover(isPresented: $isHovering) {
+                GitFileListPopover(changedFiles: changedFiles)
             }
         }
     }

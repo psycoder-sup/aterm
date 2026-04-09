@@ -90,3 +90,15 @@ extension PRState {
         }
     }
 }
+
+extension GitFileStatus {
+    var accessibilityLabel: String {
+        switch self {
+        case .modified: "Modified"
+        case .added: "Added"
+        case .deleted: "Deleted"
+        case .renamed: "Renamed"
+        case .unmerged: "Unmerged"
+        }
+    }
+}

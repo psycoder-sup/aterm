@@ -32,7 +32,7 @@ struct RepoStatusLineView: View {
 
             Spacer(minLength: 4)
 
-            GitBadgesView(diffSummary: repoStatus.diffSummary)
+            GitBadgesView(diffSummary: repoStatus.diffSummary, changedFiles: repoStatus.changedFiles)
         }
         .foregroundStyle(.secondary)
     }
