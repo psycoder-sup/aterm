@@ -80,6 +80,13 @@ indirect enum PaneNodeState: Sendable, Equatable {
 struct PaneLeafState: Codable, Sendable, Equatable {
     let paneID: UUID
     let workingDirectory: String
+    let restoreCommand: String?
+
+    init(paneID: UUID, workingDirectory: String, restoreCommand: String? = nil) {
+        self.paneID = paneID
+        self.workingDirectory = workingDirectory
+        self.restoreCommand = restoreCommand
+    }
 }
 
 struct PaneSplitState: Codable, Sendable, Equatable {

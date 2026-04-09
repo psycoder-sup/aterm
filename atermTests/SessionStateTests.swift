@@ -233,6 +233,35 @@ struct PaneNodeStateEncodingTests {
         #expect(dict["second"] != nil)
     }
 
+    @Test func leafEncodesRestoreCommand() throws {
+        let leaf = PaneNodeState.pane(PaneLeafState(
+            paneID: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            workingDirectory: "/tmp/test",
+            restoreCommand: "claude --resume abc123"
+        ))
+        let data = try JSONEncoder().encode(leaf)
+        let decoded = try JSONDecoder().decode(PaneNodeState.self, from: data)
+        #expect(decoded == leaf)
+
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict["restoreCommand"] as? String == "claude --resume abc123")
+    }
+
+    @Test func leafDecodesWithoutRestoreCommand() throws {
+        let json = """
+        {"type": "pane", "paneID": "11111111-1111-1111-1111-111111111111", "workingDirectory": "/tmp/test"}
+        """
+        let data = json.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(PaneNodeState.self, from: data)
+
+        if case .pane(let leaf) = decoded {
+            #expect(leaf.restoreCommand == nil)
+            #expect(leaf.workingDirectory == "/tmp/test")
+        } else {
+            Issue.record("Expected .pane")
+        }
+    }
+
     @Test func unknownTypeThrowsDecodingError() throws {
         let json = """
         {"type": "unknown", "paneID": "11111111-1111-1111-1111-111111111111"}
