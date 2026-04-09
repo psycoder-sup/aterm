@@ -9,7 +9,7 @@ struct GitFileListPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            ForEach(Array(changedFiles.prefix(maxDisplayed).enumerated()), id: \.offset) { _, file in
+            ForEach(Array(changedFiles.prefix(maxDisplayed)), id: \.self) { file in
                 HStack(spacing: 6) {
                     Text(file.status.letter)
                         .font(.system(size: 9, design: .monospaced))

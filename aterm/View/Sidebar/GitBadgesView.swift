@@ -6,7 +6,8 @@ struct GitBadgesView: View {
     let diffSummary: GitDiffSummary
     var changedFiles: [GitChangedFile] = []
 
-    @State private var isHovering = false
+    @State private var isPopoverPresented = false
+    @State private var hoverTask: Task<Void, Never>?
 
     var body: some View {
         if !diffSummary.isEmpty {
@@ -27,9 +28,34 @@ struct GitBadgesView: View {
                     badgePill(count: diffSummary.unmerged, letter: "U")
                 }
             }
-            .onHover { isHovering = $0 }
-            .popover(isPresented: $isHovering) {
+            .onHover { hovering in
+                hoverTask?.cancel()
+                if hovering {
+                    hoverTask = Task {
+                        try? await Task.sleep(for: .milliseconds(400))
+                        guard !Task.isCancelled else { return }
+                        isPopoverPresented = true
+                    }
+                } else {
+                    hoverTask = Task {
+                        try? await Task.sleep(for: .milliseconds(200))
+                        guard !Task.isCancelled else { return }
+                        isPopoverPresented = false
+                    }
+                }
+            }
+            .popover(isPresented: $isPopoverPresented) {
                 GitFileListPopover(changedFiles: changedFiles)
+                    .onHover { hovering in
+                        hoverTask?.cancel()
+                        if !hovering {
+                            hoverTask = Task {
+                                try? await Task.sleep(for: .milliseconds(200))
+                                guard !Task.isCancelled else { return }
+                                isPopoverPresented = false
+                            }
+                        }
+                    }
             }
         }
     }

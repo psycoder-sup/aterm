@@ -32,8 +32,14 @@ final class SpaceGitContext {
     /// A directory we know maps to a specific repo, used for branch refresh.
     private var repoDirectories: [GitRepoID: String] = [:]
 
+    /// Root working tree path per repo, used for same-repo prefix checks.
+    private var repoRoots: [GitRepoID: String] = [:]
+
     /// PR status cache with 60-second TTL.
     private let prCache = PRStatusCache()
+
+    /// Tracks in-flight PR fetch tasks per repo for cancellation.
+    private var prFetchTasks: [GitRepoID: Task<Void, Never>] = [:]
 
     /// Active FSEvents watchers per repo.
     private var watchers: [GitRepoID: GitRepoWatcher] = [:]
@@ -66,10 +72,10 @@ final class SpaceGitContext {
         paneDirectories[paneID] = newDirectory
 
         // Skip re-detection if this pane is already assigned to a repo
-        // whose directory is a parent of the new directory (same repo, different subdir).
+        // and the new directory is within the same repo root.
         if let existingRepoID = paneRepoAssignments[paneID],
-           let repoDir = repoDirectories[existingRepoID],
-           newDirectory == repoDir || newDirectory.hasPrefix(repoDir.hasSuffix("/") ? repoDir : repoDir + "/") {
+           let repoRoot = repoRoots[existingRepoID],
+           newDirectory == repoRoot || newDirectory.hasPrefix(repoRoot.hasSuffix("/") ? repoRoot : repoRoot + "/") {
             // Same repo — just refresh branch info without re-detecting
             refreshRepo(repoID: existingRepoID, directory: newDirectory)
             repoDirectories[existingRepoID] = newDirectory
@@ -91,6 +97,10 @@ final class SpaceGitContext {
                 self.paneRepoAssignments[paneID] = newRepoID
                 self.repoDirectories[newRepoID] = newDirectory
                 self.repoInfo[newRepoID] = (gitDir: repo.gitDir, commonDir: repo.commonDir)
+                if self.repoRoots[newRepoID] == nil {
+                    let commonDirURL = URL(filePath: repo.commonDir)
+                    self.repoRoots[newRepoID] = commonDirURL.deletingLastPathComponent().path
+                }
 
                 // Add new repo if not already pinned
                 if !self.pinnedRepoOrder.contains(newRepoID) {
@@ -143,18 +153,17 @@ final class SpaceGitContext {
 
     /// Cancels all in-flight tasks and clears state. Called on Space close.
     func teardown() {
-        for task in inFlightTasks.values {
-            task.cancel()
-        }
+        for task in inFlightTasks.values { task.cancel() }
         inFlightTasks.removeAll()
+        for task in prFetchTasks.values { task.cancel() }
+        prFetchTasks.removeAll()
         repoStatuses.removeAll()
         paneRepoAssignments.removeAll()
         pinnedRepoOrder.removeAll()
         paneDirectories.removeAll()
         repoDirectories.removeAll()
-        for watcher in watchers.values {
-            watcher.stop()
-        }
+        repoRoots.removeAll()
+        for watcher in watchers.values { watcher.stop() }
         watchers.removeAll()
         prCache.evictAll()
         repoInfo.removeAll()
@@ -176,8 +185,11 @@ final class SpaceGitContext {
     private func unpinRepo(_ repoID: GitRepoID) {
         inFlightTasks[repoID]?.cancel()
         inFlightTasks.removeValue(forKey: repoID)
+        prFetchTasks[repoID]?.cancel()
+        prFetchTasks.removeValue(forKey: repoID)
         repoStatuses.removeValue(forKey: repoID)
         repoDirectories.removeValue(forKey: repoID)
+        repoRoots.removeValue(forKey: repoID)
         repoInfo.removeValue(forKey: repoID)
         pinnedRepoOrder.removeAll { $0 == repoID }
         stopWatcher(repoID: repoID)
@@ -211,6 +223,13 @@ final class SpaceGitContext {
             }
             self.repoDirectories[repoID] = directory
 
+            // Store repo root (parent of .git) for same-repo prefix checks
+            if self.repoRoots[repoID] == nil {
+                // commonDir is the .git dir; its parent is the working tree root
+                let commonDirURL = URL(filePath: repo.commonDir)
+                self.repoRoots[repoID] = commonDirURL.deletingLastPathComponent().path
+            }
+
             // Add to pinned order if new
             if !self.pinnedRepoOrder.contains(repoID) {
                 self.pinnedRepoOrder.append(repoID)
@@ -228,6 +247,7 @@ final class SpaceGitContext {
     /// Refreshes branch and diff status for a specific repo, with in-flight cancellation.
     private func refreshRepo(repoID: GitRepoID, directory: String) {
         inFlightTasks[repoID]?.cancel()
+        prFetchTasks[repoID]?.cancel()
 
         let task = Task { [weak self] in
             async let branchResult = GitStatusService.currentBranch(directory: directory)
@@ -248,18 +268,25 @@ final class SpaceGitContext {
                     prStatus = cached
                 case .miss:
                     if self.prCache.markPending(repoID: repoID, branch: branchName) {
-                        Task { [weak self] in
+                        let prTask = Task { [weak self] in
+                            defer { self?.prCache.clearPending(repoID: repoID, branch: branchName) }
                             let fetched = await GitStatusService.fetchPRStatus(
                                 directory: directory,
                                 branch: branchName
                             )
+                            guard !Task.isCancelled else { return }
                             guard let self else { return }
                             self.prCache.set(repoID: repoID, branch: branchName, status: fetched)
-                            if var status = self.repoStatuses[repoID] {
-                                status.prStatus = fetched
-                                self.repoStatuses[repoID] = status
+                            // Only update if branch still matches (avoid stale overwrite)
+                            if let current = self.repoStatuses[repoID],
+                               current.branchName == branchName {
+                                var updated = current
+                                updated.prStatus = fetched
+                                self.repoStatuses[repoID] = updated
                             }
+                            self.prFetchTasks.removeValue(forKey: repoID)
                         }
+                        self.prFetchTasks[repoID] = prTask
                     }
                 }
             }

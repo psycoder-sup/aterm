@@ -41,7 +41,7 @@ struct GitDiffSummary: Sendable, Equatable {
 
 // MARK: - Changed Files
 
-struct GitChangedFile: Sendable {
+struct GitChangedFile: Sendable, Hashable {
     let status: GitFileStatus
     let path: String
 }
