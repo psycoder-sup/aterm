@@ -412,6 +412,7 @@ struct PaneGroup: ParsableCommand {
             PaneList.self,
             PaneClose.self,
             PaneFocus.self,
+            PaneSetRestoreCommand.self,
         ]
     )
 }
@@ -505,6 +506,21 @@ struct PaneFocus: ParsableCommand {
         var params: [String: IPCValue] = ["target": .string(target)]
         if let pane { params["paneId"] = .string(pane) }
         let response = try sendRequest(command: "pane.focus", params: params)
+        try handleVoidResponse(response)
+    }
+}
+
+struct PaneSetRestoreCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "set-restore-command",
+        abstract: "Set a command to replay when this pane is restored."
+    )
+
+    @Option(name: .long, help: "Command to replay on restore.")
+    var command: String
+
+    func run() throws {
+        let response = try sendRequest(command: "pane.set-restore-command", params: ["command": .string(command)])
         try handleVoidResponse(response)
     }
 }
