@@ -913,3 +913,164 @@ struct SessionRestorerWorktreePathTests {
         #expect(validated.workspaces[0].spaces[0].worktreePath == worktreeDir.path)
     }
 }
+
+// MARK: - Restore Command Round-Trip Tests
+
+struct RestoreCommandRoundTripTests {
+    private static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return encoder
+    }
+
+    private static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }
+
+    @Test func roundTripWithRestoreCommand() throws {
+        let paneID = UUID()
+        let tabID = UUID()
+        let spaceID = UUID()
+        let wsID = UUID()
+
+        let state = SessionState(
+            version: 2,
+            savedAt: Date(timeIntervalSince1970: 1000000),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "default",
+                    activeSpaceId: spaceID,
+                    defaultWorkingDirectory: "/tmp",
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: tabID,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(
+                                    id: tabID,
+                                    name: nil,
+                                    activePaneId: paneID,
+                                    root: .pane(PaneLeafState(
+                                        paneID: paneID,
+                                        workingDirectory: "/tmp",
+                                        restoreCommand: "claude --resume abc123"
+                                    ))
+                                )
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        let data = try Self.makeEncoder().encode(state)
+        let decoded = try Self.makeDecoder().decode(SessionState.self, from: data)
+
+        #expect(decoded == state)
+        if case .pane(let leaf) = decoded.workspaces[0].spaces[0].tabs[0].root {
+            #expect(leaf.restoreCommand == "claude --resume abc123")
+        } else {
+            Issue.record("Expected .pane")
+        }
+    }
+
+    @Test func roundTripMixedPanesWithAndWithoutRestoreCommand() throws {
+        let paneA = UUID()
+        let paneB = UUID()
+        let tabID = UUID()
+        let spaceID = UUID()
+        let wsID = UUID()
+
+        let root: PaneNodeState = .split(PaneSplitState(
+            direction: "horizontal",
+            ratio: 0.5,
+            first: .pane(PaneLeafState(paneID: paneA, workingDirectory: "/tmp/a", restoreCommand: "claude --resume sess1")),
+            second: .pane(PaneLeafState(paneID: paneB, workingDirectory: "/tmp/b"))
+        ))
+
+        let state = SessionState(
+            version: 2,
+            savedAt: Date(timeIntervalSince1970: 2000000),
+            activeWorkspaceId: wsID,
+            workspaces: [
+                WorkspaceState(
+                    id: wsID,
+                    name: "default",
+                    activeSpaceId: spaceID,
+                    defaultWorkingDirectory: nil,
+                    spaces: [
+                        SpaceState(
+                            id: spaceID,
+                            name: "default",
+                            activeTabId: tabID,
+                            defaultWorkingDirectory: nil,
+                            tabs: [
+                                TabState(id: tabID, name: nil, activePaneId: paneA, root: root)
+                            ]
+                        )
+                    ],
+                    windowFrame: nil,
+                    isFullscreen: nil
+                )
+            ]
+        )
+
+        let data = try Self.makeEncoder().encode(state)
+        let decoded = try Self.makeDecoder().decode(SessionState.self, from: data)
+
+        #expect(decoded == state)
+        if case .split(let split) = decoded.workspaces[0].spaces[0].tabs[0].root {
+            if case .pane(let first) = split.first {
+                #expect(first.restoreCommand == "claude --resume sess1")
+            } else {
+                Issue.record("Expected .pane for first")
+            }
+            if case .pane(let second) = split.second {
+                #expect(second.restoreCommand == nil)
+            } else {
+                Issue.record("Expected .pane for second")
+            }
+        } else {
+            Issue.record("Expected .split")
+        }
+    }
+}
+
+// MARK: - PaneViewModel Restore Command Tests
+
+@MainActor
+struct RestoreCommandPaneViewModelTests {
+    @Test func fromStatePopulatesRestoreCommands() {
+        let paneID = UUID()
+        let root: PaneNodeState = .pane(PaneLeafState(
+            paneID: paneID,
+            workingDirectory: "/tmp",
+            restoreCommand: "claude --resume xyz"
+        ))
+
+        let pvm = PaneViewModel.fromState(root, focusedPaneID: paneID)
+
+        #expect(pvm.restoreCommand(for: paneID) == "claude --resume xyz")
+    }
+
+    @Test func fromStateWithoutRestoreCommandHasNilRestoreCommand() {
+        let paneID = UUID()
+        let root: PaneNodeState = .pane(PaneLeafState(
+            paneID: paneID,
+            workingDirectory: "/tmp"
+        ))
+
+        let pvm = PaneViewModel.fromState(root, focusedPaneID: paneID)
+
+        #expect(pvm.restoreCommand(for: paneID) == nil)
+    }
+}
