@@ -39,10 +39,10 @@ Cascading close via `onEmpty` callbacks: `PaneViewModel` → `TabModel` → `Spa
 
 ### Source Layout
 
-- `Models/` — `Workspace`, `WorkspaceCollection`, `WorkspaceManager`
-- `Tab/` — `SpaceModel`, `TabModel`, `SpaceCollection`
-- `Pane/` — `PaneViewModel`, `SplitTree`, `PaneNode`, `SplitNavigation`, `SplitLayout`
-- `Core/` — `GhosttyApp`, `GhosttyTerminalSurface`, notifications, IPC
+- `Workspace/` — `Workspace`, `WorkspaceCollection`, `WorkspaceManager`
+- `Tab/` — `SpaceModel`, `TabModel`, `SpaceCollection`, `SpaceGitContext`
+- `Pane/` — `PaneViewModel`, `SplitTree`, `PaneNode`, `SplitNavigation`, `SplitLayout`, `PaneHierarchyContext`, `PaneStatusManager`
+- `Core/` — `GhosttyApp`, `GhosttyTerminalSurface`, notifications, IPC, `ClaudeSessionState`, `GitTypes`
 - `View/` — SwiftUI components (terminal, sidebar, tabs, splits)
 - `WindowManagement/` — `WorkspaceWindowController`, `WindowCoordinator`, `AtermAppDelegate`
 - `Persistence/` — Session serialization/restoration (`SessionState`)
