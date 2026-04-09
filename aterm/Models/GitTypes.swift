@@ -79,3 +79,14 @@ enum PRState: String, Sendable {
     case merged
     case closed
 }
+
+extension PRState {
+    var color: Color {
+        switch self {
+        case .open: .green
+        case .draft: .gray
+        case .merged: .purple
+        case .closed: .red
+        }
+    }
+}

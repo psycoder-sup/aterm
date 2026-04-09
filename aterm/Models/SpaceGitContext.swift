@@ -32,6 +32,9 @@ final class SpaceGitContext {
     /// A directory we know maps to a specific repo, used for branch refresh.
     private var repoDirectories: [GitRepoID: String] = [:]
 
+    /// PR status cache with 60-second TTL.
+    private let prCache = PRStatusCache()
+
     /// Active FSEvents watchers per repo.
     private var watchers: [GitRepoID: GitRepoWatcher] = [:]
 
@@ -153,6 +156,7 @@ final class SpaceGitContext {
             watcher.stop()
         }
         watchers.removeAll()
+        prCache.evictAll()
         repoInfo.removeAll()
     }
 
@@ -223,7 +227,6 @@ final class SpaceGitContext {
 
     /// Refreshes branch and diff status for a specific repo, with in-flight cancellation.
     private func refreshRepo(repoID: GitRepoID, directory: String) {
-        // Cancel any existing in-flight task for this repo
         inFlightTasks[repoID]?.cancel()
 
         let task = Task { [weak self] in
@@ -236,12 +239,38 @@ final class SpaceGitContext {
             guard !Task.isCancelled else { return }
             guard let self else { return }
 
+            // Check PR cache
+            var prStatus: PRStatus? = nil
+            if let branchName = branch?.name {
+                let cacheResult = self.prCache.get(repoID: repoID, branch: branchName)
+                switch cacheResult {
+                case .hit(let cached):
+                    prStatus = cached
+                case .miss:
+                    if self.prCache.markPending(repoID: repoID, branch: branchName) {
+                        Task { [weak self] in
+                            let fetched = await GitStatusService.fetchPRStatus(
+                                directory: directory,
+                                branch: branchName
+                            )
+                            guard let self else { return }
+                            self.prCache.set(repoID: repoID, branch: branchName, status: fetched)
+                            if var status = self.repoStatuses[repoID] {
+                                status.prStatus = fetched
+                                self.repoStatuses[repoID] = status
+                            }
+                        }
+                    }
+                }
+            }
+
             let status = GitRepoStatus(
                 repoID: repoID,
                 branchName: branch?.name,
                 isDetachedHead: branch?.isDetached ?? false,
                 diffSummary: diff.summary,
                 changedFiles: diff.files,
+                prStatus: prStatus,
                 lastUpdated: Date()
             )
 

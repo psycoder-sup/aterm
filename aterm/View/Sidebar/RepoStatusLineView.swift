@@ -25,6 +25,11 @@ struct RepoStatusLineView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
 
+            if let prStatus = repoStatus.prStatus {
+                Spacer().frame(width: 4)
+                PRStatusIndicatorView(prStatus: prStatus)
+            }
+
             Spacer(minLength: 4)
 
             GitBadgesView(diffSummary: repoStatus.diffSummary)
