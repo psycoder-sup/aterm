@@ -14,10 +14,54 @@ struct SidebarSpaceRowView: View {
 
     private func accessibilityDescription(sessions: [(paneID: UUID, state: ClaudeSessionState)]) -> String {
         var parts: [String] = [isActive ? "selected" : "not selected"]
-        if !sessions.isEmpty {
-            let descriptions = sessions.map { "\($0.state.rawValue)" }
+
+        // Repo status descriptions (FR-070)
+        for repoID in space.gitContext.pinnedRepoOrder {
+            guard let status = space.gitContext.repoStatuses[repoID] else { continue }
+            var repoParts: [String] = []
+
+            if let branch = status.branchName {
+                repoParts.append("\(branch) branch")
+            }
+
+            if !status.diffSummary.isEmpty {
+                var changes: [String] = []
+                if status.diffSummary.modified > 0 { changes.append("\(status.diffSummary.modified) modified") }
+                if status.diffSummary.added > 0 { changes.append("\(status.diffSummary.added) added") }
+                if status.diffSummary.deleted > 0 { changes.append("\(status.diffSummary.deleted) deleted") }
+                if status.diffSummary.renamed > 0 { changes.append("\(status.diffSummary.renamed) renamed") }
+                if status.diffSummary.unmerged > 0 { changes.append("\(status.diffSummary.unmerged) unmerged") }
+                repoParts.append(changes.joined(separator: " "))
+            }
+
+            if let pr = status.prStatus {
+                repoParts.append("pull request \(pr.state.rawValue)")
+            }
+
+            // Count Claude sessions in this repo
+            let repoSessions = sessions.filter { space.gitContext.paneRepoAssignments[$0.paneID] == repoID }
+            if !repoSessions.isEmpty {
+                let needsAttention = repoSessions.filter { $0.state == .needsAttention }.count
+                let desc = "\(repoSessions.count) Claude session\(repoSessions.count == 1 ? "" : "s")"
+                if needsAttention > 0 {
+                    repoParts.append("\(desc) \(needsAttention) needs attention")
+                } else {
+                    repoParts.append(desc)
+                }
+            }
+
+            if !repoParts.isEmpty {
+                parts.append(repoParts.joined(separator: ", "))
+            }
+        }
+
+        // Non-repo sessions
+        let nonRepoSessions = sessions.filter { space.gitContext.paneRepoAssignments[$0.paneID] == nil }
+        if !nonRepoSessions.isEmpty {
+            let descriptions = nonRepoSessions.map { $0.state.rawValue }
             parts.append("Claude sessions: \(descriptions.joined(separator: ", "))")
         }
+
         return parts.joined(separator: ". ")
     }
 
