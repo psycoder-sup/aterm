@@ -20,6 +20,9 @@ final class SpaceGitContext {
 
     // MARK: - Private State
 
+    /// The repo ID derived from worktreePath (if set). Always sorted first in pinnedRepoOrder.
+    private var worktreeRepoID: GitRepoID?
+
     /// Tracks in-flight refresh tasks per repo for cancellation on rapid re-triggers.
     private var inFlightTasks: [GitRepoID: Task<Void, Never>] = [:]
 
@@ -48,7 +51,7 @@ final class SpaceGitContext {
         if let worktreePath {
             let path = worktreePath.path
             Task { [weak self] in
-                await self?.detectAndRefresh(paneID: nil, directory: path)
+                await self?.detectAndRefresh(paneID: nil, directory: path, isWorktreeInit: true)
             }
         }
     }
@@ -70,7 +73,43 @@ final class SpaceGitContext {
             return
         }
 
-        detectAndRefresh(paneID: paneID, directory: newDirectory)
+        // Detect new repo — pane may be moving to a different repo or a non-git dir
+        let previousRepoID = paneRepoAssignments[paneID]
+
+        Task { [weak self] in
+            guard let self else { return }
+
+            let repo = await GitStatusService.detectRepo(directory: newDirectory)
+
+            if let repo {
+                let newRepoID = GitRepoID(path: repo.commonDir)
+
+                // Update pane assignment
+                self.paneRepoAssignments[paneID] = newRepoID
+                self.repoDirectories[newRepoID] = newDirectory
+                self.repoInfo[newRepoID] = (gitDir: repo.gitDir, commonDir: repo.commonDir)
+
+                // Add new repo if not already pinned
+                if !self.pinnedRepoOrder.contains(newRepoID) {
+                    self.pinnedRepoOrder.append(newRepoID)
+                    self.sortPinnedRepoOrder()
+                    self.startWatcher(repoID: newRepoID, gitDir: repo.gitDir, commonDir: repo.commonDir, workingDirectory: newDirectory)
+                    Log.git.debug("Pinned new repo: \(newRepoID.path)")
+                }
+
+                self.refreshRepo(repoID: newRepoID, directory: newDirectory)
+
+                // Garbage collect previous repo if pane moved to a different repo
+                if let previousRepoID, newRepoID != previousRepoID {
+                    let stillReferenced = self.paneRepoAssignments.values.contains(previousRepoID)
+                    if !stillReferenced {
+                        self.unpinRepo(previousRepoID)
+                    }
+                }
+            }
+            // If repo is nil (non-git dir), do NOT update pane assignment.
+            // The pane keeps its previous repo association (sticky pinning FR-020.3).
+        }
     }
 
     /// Called when a new pane is created or restored with a known working directory.
@@ -85,17 +124,9 @@ final class SpaceGitContext {
         paneDirectories.removeValue(forKey: paneID)
         guard let repoID = paneRepoAssignments.removeValue(forKey: paneID) else { return }
 
-        // Check if any remaining pane still references this repo
         let stillReferenced = paneRepoAssignments.values.contains(repoID)
         if !stillReferenced {
-            inFlightTasks[repoID]?.cancel()
-            inFlightTasks.removeValue(forKey: repoID)
-            repoStatuses.removeValue(forKey: repoID)
-            repoDirectories.removeValue(forKey: repoID)
-            pinnedRepoOrder.removeAll { $0 == repoID }
-            repoInfo.removeValue(forKey: repoID)
-            stopWatcher(repoID: repoID)
-            Log.git.debug("Unpinned orphaned repo: \(repoID.path)")
+            unpinRepo(repoID)
         }
     }
 
@@ -127,11 +158,34 @@ final class SpaceGitContext {
 
     // MARK: - Private
 
+    /// Sorts pinnedRepoOrder: worktree repo first (if applicable), then alphabetical by path.
+    private func sortPinnedRepoOrder() {
+        let worktreeID = self.worktreeRepoID
+        pinnedRepoOrder.sort { a, b in
+            if a == worktreeID { return true }
+            if b == worktreeID { return false }
+            return a.path < b.path
+        }
+    }
+
+    /// Unpins a repo and cleans up all associated state.
+    private func unpinRepo(_ repoID: GitRepoID) {
+        inFlightTasks[repoID]?.cancel()
+        inFlightTasks.removeValue(forKey: repoID)
+        repoStatuses.removeValue(forKey: repoID)
+        repoDirectories.removeValue(forKey: repoID)
+        repoInfo.removeValue(forKey: repoID)
+        pinnedRepoOrder.removeAll { $0 == repoID }
+        stopWatcher(repoID: repoID)
+        Log.git.debug("Unpinned orphaned repo: \(repoID.path)")
+    }
+
     /// Detects the git repo for a directory and refreshes its status.
     /// - Parameters:
     ///   - paneID: The pane that triggered detection (nil for worktree-path init).
     ///   - directory: The working directory to detect from.
-    private func detectAndRefresh(paneID: UUID?, directory: String) {
+    ///   - isWorktreeInit: If true, sets worktreeRepoID for sort priority.
+    private func detectAndRefresh(paneID: UUID?, directory: String, isWorktreeInit: Bool = false) {
         Task { [weak self] in
             guard let self else { return }
 
@@ -144,6 +198,10 @@ final class SpaceGitContext {
 
             let repoID = GitRepoID(path: repo.commonDir)
 
+            if isWorktreeInit {
+                self.worktreeRepoID = repoID
+            }
+
             if let paneID {
                 self.paneRepoAssignments[paneID] = repoID
             }
@@ -152,6 +210,7 @@ final class SpaceGitContext {
             // Add to pinned order if new
             if !self.pinnedRepoOrder.contains(repoID) {
                 self.pinnedRepoOrder.append(repoID)
+                self.sortPinnedRepoOrder()
                 Log.git.debug("Pinned new repo: \(repoID.path)")
             }
 

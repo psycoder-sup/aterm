@@ -35,7 +35,7 @@ enum GitStatusService {
             if rawCommonDir.hasPrefix("/") {
                 absoluteCommonDir = URL(filePath: rawCommonDir).standardizedFileURL.path
             } else {
-                absoluteCommonDir = URL(filePath: rawCommonDir, relativeTo: URL(filePath: directory))
+                absoluteCommonDir = URL(filePath: rawCommonDir, relativeTo: URL(filePath: directory, directoryHint: .isDirectory))
                     .standardizedFileURL.path
             }
 

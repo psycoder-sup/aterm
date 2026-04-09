@@ -260,6 +260,106 @@ struct SpaceGitContextTests {
         #expect(context.activeWatcherCount == 0)
     }
 
+    // MARK: - Pinning Behavior
+
+    @Test func repoStaysPinnedWhenPaneCdsToNonGitDir() async throws {
+        let repo = try makeTempGitRepo()
+        let nonGitDir = try makeTempDir()
+        defer { cleanup(repo); cleanup(nonGitDir) }
+
+        let context = SpaceGitContext(worktreePath: nil)
+        let paneID = UUID()
+
+        context.paneAdded(paneID: paneID, workingDirectory: repo)
+
+        try await pollUntil(timeout: 5.0) {
+            !context.repoStatuses.isEmpty
+        }
+
+        let repoID = context.pinnedRepoOrder.first!
+
+        // cd to non-git directory — repo should stay pinned (FR-020.3)
+        context.paneWorkingDirectoryChanged(paneID: paneID, newDirectory: nonGitDir)
+
+        // Wait for detection to run
+        try await Task.sleep(for: .milliseconds(500))
+
+        #expect(context.pinnedRepoOrder.contains(repoID))
+        #expect(context.repoStatuses[repoID] != nil)
+    }
+
+    @Test func paneReassignsFromRepoAToRepoB() async throws {
+        let repoA = try makeTempGitRepo()
+        let repoB = try makeTempGitRepo()
+        defer { cleanup(repoA); cleanup(repoB) }
+
+        let context = SpaceGitContext(worktreePath: nil)
+        let paneID = UUID()
+
+        // Start in repo A
+        context.paneAdded(paneID: paneID, workingDirectory: repoA)
+
+        try await pollUntil(timeout: 5.0) {
+            !context.repoStatuses.isEmpty
+        }
+
+        let repoAID = context.pinnedRepoOrder.first!
+        #expect(context.paneRepoAssignments[paneID] == repoAID)
+
+        // Move to repo B
+        context.paneWorkingDirectoryChanged(paneID: paneID, newDirectory: repoB)
+
+        try await pollUntil(timeout: 5.0) {
+            context.paneRepoAssignments[paneID] != repoAID
+        }
+
+        // Pane should now be in repo B; repo A unpinned (no other panes)
+        let repoBID = context.paneRepoAssignments[paneID]
+        #expect(repoBID != nil)
+        #expect(repoBID != repoAID)
+        #expect(!context.pinnedRepoOrder.contains(repoAID))
+        #expect(context.pinnedRepoOrder.contains(repoBID!))
+    }
+
+    @Test func multipleReposDetectedFromMultiplePanes() async throws {
+        let repoA = try makeTempGitRepo()
+        let repoB = try makeTempGitRepo()
+        defer { cleanup(repoA); cleanup(repoB) }
+
+        let context = SpaceGitContext(worktreePath: nil)
+        let paneA = UUID()
+        let paneB = UUID()
+
+        context.paneAdded(paneID: paneA, workingDirectory: repoA)
+        context.paneAdded(paneID: paneB, workingDirectory: repoB)
+
+        try await pollUntil(timeout: 5.0) {
+            context.repoStatuses.count == 2
+        }
+
+        #expect(context.pinnedRepoOrder.count == 2)
+        #expect(context.paneRepoAssignments[paneA] != context.paneRepoAssignments[paneB])
+    }
+
+    @Test func pinnedRepoOrderAlphabetical() async throws {
+        let repoA = try makeTempGitRepoNamed("aaa-repo")
+        let repoB = try makeTempGitRepoNamed("zzz-repo")
+        defer { cleanup(repoA); cleanup(repoB) }
+
+        let context = SpaceGitContext(worktreePath: nil)
+
+        // Add zzz first, then aaa
+        context.paneAdded(paneID: UUID(), workingDirectory: repoB)
+        try await pollUntil(timeout: 5.0) { context.repoStatuses.count == 1 }
+
+        context.paneAdded(paneID: UUID(), workingDirectory: repoA)
+        try await pollUntil(timeout: 5.0) { context.repoStatuses.count == 2 }
+
+        // Should be sorted alphabetically
+        let order = context.pinnedRepoOrder
+        #expect(order[0].path < order[1].path)
+    }
+
     // MARK: - Helpers
 
     private func pollUntil(timeout: Double, condition: @MainActor () -> Bool) async throws {
@@ -303,6 +403,29 @@ struct SpaceGitContextTests {
             let msg = String(data: stderr.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
             throw StringError("git \(args.joined(separator: " ")) failed: \(msg)")
         }
+    }
+
+    private func makeTempDir() throws -> String {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("aterm-test-\(UUID().uuidString)")
+            .path
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    private func makeTempGitRepoNamed(_ name: String) throws -> String {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(name + "-\(UUID().uuidString)")
+            .path
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try runGitSync(["init"], in: dir)
+        try runGitSync(["config", "user.email", "test@test.com"], in: dir)
+        try runGitSync(["config", "user.name", "Test"], in: dir)
+        let readme = (dir as NSString).appendingPathComponent("README.md")
+        try "# Test".write(toFile: readme, atomically: true, encoding: .utf8)
+        try runGitSync(["add", "."], in: dir)
+        try runGitSync(["commit", "-m", "Initial commit"], in: dir)
+        return dir
     }
 
     private func cleanup(_ path: String) {
