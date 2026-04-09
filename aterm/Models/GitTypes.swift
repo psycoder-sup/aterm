@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Identity
 
@@ -31,6 +32,10 @@ struct GitDiffSummary: Sendable, Equatable {
         modified == 0 && added == 0 && deleted == 0 && renamed == 0 && unmerged == 0
     }
 
+    var totalCount: Int {
+        modified + added + deleted + renamed + unmerged
+    }
+
     static let empty = GitDiffSummary()
 }
 
@@ -47,6 +52,18 @@ enum GitFileStatus: String, Sendable {
     case deleted = "D"
     case renamed = "R"
     case unmerged = "U"
+
+    var letter: String { rawValue }
+
+    var color: Color {
+        switch self {
+        case .modified: .yellow
+        case .added: .green
+        case .deleted: .red
+        case .renamed: .blue
+        case .unmerged: .orange
+        }
+    }
 }
 
 // MARK: - PR

@@ -12,6 +12,10 @@ struct RepoStatusLineView: View {
                 .font(.system(size: 10))
                 .lineLimit(1)
                 .truncationMode(.middle)
+
+            Spacer(minLength: 4)
+
+            GitBadgesView(diffSummary: repoStatus.diffSummary)
         }
         .foregroundStyle(.secondary)
     }

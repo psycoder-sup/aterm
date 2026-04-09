@@ -77,6 +77,92 @@ enum GitStatusService {
         }
     }
 
+    /// Returns a diff summary and list of changed files for the given directory.
+    /// Caps the files array at 100 entries while summary totals reflect the full count.
+    static func diffStatus(
+        directory: String
+    ) async -> (summary: GitDiffSummary, files: [GitChangedFile]) {
+        do {
+            let result = try await runGit(
+                ["status", "--porcelain=v1", "--ignore-submodules"],
+                workingDirectory: directory
+            )
+            guard result.exitCode == 0 else {
+                Log.git.error("git status failed for \(directory): \(result.stderr)")
+                return (.empty, [])
+            }
+            guard !result.stdout.isEmpty else {
+                Log.git.debug("Clean repo: \(directory)")
+                return (.empty, [])
+            }
+
+            let lines = result.stdout.components(separatedBy: "\n")
+                .filter { !$0.isEmpty }
+
+            var summary = GitDiffSummary()
+            var files: [GitChangedFile] = []
+            let maxFiles = 100
+
+            let unmergedPairs: Set<String> = ["DD", "AU", "UD", "UA", "DU", "AA", "UU"]
+
+            for line in lines {
+                guard line.count >= 4 else { continue }
+
+                let xy = String(line.prefix(2))
+                let x = xy.first!
+                let y = xy.last!
+
+                // Skip ignored files
+                if xy == "!!" { continue }
+
+                // Determine file status from XY code
+                let status: GitFileStatus
+                if unmergedPairs.contains(xy) {
+                    status = .unmerged
+                } else if x == "R" {
+                    status = .renamed
+                } else if xy == "??" || x == "A" {
+                    status = .added
+                } else if x == "D" || y == "D" {
+                    status = .deleted
+                } else if x == "M" || y == "M" {
+                    status = .modified
+                } else {
+                    continue
+                }
+
+                // Extract path — handle rename format "ORIG -> DEST"
+                let rawPath = String(line.dropFirst(3))
+                let path: String
+                if status == .renamed, let arrowRange = rawPath.range(of: " -> ") {
+                    path = String(rawPath[arrowRange.upperBound...])
+                } else {
+                    path = rawPath
+                }
+
+                // Update summary counts (always)
+                switch status {
+                case .modified: summary.modified += 1
+                case .added:    summary.added += 1
+                case .deleted:  summary.deleted += 1
+                case .renamed:  summary.renamed += 1
+                case .unmerged: summary.unmerged += 1
+                }
+
+                // Cap files array at maxFiles
+                if files.count < maxFiles {
+                    files.append(GitChangedFile(status: status, path: path))
+                }
+            }
+
+            Log.git.debug("diffStatus \(directory): \(summary.totalCount) changes (\(files.count) files captured)")
+            return (summary, files)
+        } catch {
+            Log.git.error("diffStatus failed for \(directory): \(error)")
+            return (.empty, [])
+        }
+    }
+
     // MARK: - Private
 
     private static func runGit(
@@ -107,9 +193,9 @@ enum GitStatusService {
                 process.waitUntilExit()
 
                 let stdout = String(data: stdoutData, encoding: .utf8)?
-                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    .trimmingCharacters(in: .newlines) ?? ""
                 let stderr = String(data: stderrData, encoding: .utf8)?
-                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    .trimmingCharacters(in: .newlines) ?? ""
                 continuation.resume(returning: (process.terminationStatus, stdout, stderr))
             }
         }

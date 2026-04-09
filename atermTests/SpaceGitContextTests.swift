@@ -174,6 +174,38 @@ struct SpaceGitContextTests {
         #expect(status.prStatus == nil)
     }
 
+    // MARK: - Integration: Diff Summary
+
+    @Test func integrationPopulatesDiffSummary() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        // Modify existing file
+        let readmePath = (repo as NSString).appendingPathComponent("README.md")
+        try "Modified content".write(toFile: readmePath, atomically: true, encoding: .utf8)
+
+        // Add a new untracked file
+        let newFilePath = (repo as NSString).appendingPathComponent("new.txt")
+        try "new file".write(toFile: newFilePath, atomically: true, encoding: .utf8)
+
+        let context = SpaceGitContext(worktreePath: nil)
+        let paneID = UUID()
+
+        context.paneWorkingDirectoryChanged(paneID: paneID, newDirectory: repo)
+
+        try await pollUntil(timeout: 5.0) {
+            context.repoStatuses.values.first?.diffSummary.isEmpty == false
+        }
+
+        let repoID = try #require(context.pinnedRepoOrder.first)
+        let status = try #require(context.repoStatuses[repoID])
+
+        #expect(status.diffSummary.modified == 1)
+        #expect(status.diffSummary.added == 1)
+        #expect(status.diffSummary.totalCount == 2)
+        #expect(status.changedFiles.count == 2)
+    }
+
     // MARK: - Helpers
 
     private func pollUntil(timeout: Double, condition: @MainActor () -> Bool) async throws {

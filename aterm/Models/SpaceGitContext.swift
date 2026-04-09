@@ -141,21 +141,27 @@ final class SpaceGitContext {
         }
     }
 
-    /// Refreshes branch info for a specific repo, with in-flight cancellation.
+    /// Refreshes branch and diff status for a specific repo, with in-flight cancellation.
     private func refreshRepo(repoID: GitRepoID, directory: String) {
         // Cancel any existing in-flight task for this repo
         inFlightTasks[repoID]?.cancel()
 
         let task = Task { [weak self] in
-            let branchResult = await GitStatusService.currentBranch(directory: directory)
+            async let branchResult = GitStatusService.currentBranch(directory: directory)
+            async let diffResult = GitStatusService.diffStatus(directory: directory)
+
+            let branch = await branchResult
+            let diff = await diffResult
 
             guard !Task.isCancelled else { return }
             guard let self else { return }
 
             let status = GitRepoStatus(
                 repoID: repoID,
-                branchName: branchResult?.name,
-                isDetachedHead: branchResult?.isDetached ?? false,
+                branchName: branch?.name,
+                isDetachedHead: branch?.isDetached ?? false,
+                diffSummary: diff.summary,
+                changedFiles: diff.files,
                 lastUpdated: Date()
             )
 

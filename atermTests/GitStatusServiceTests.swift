@@ -77,6 +77,122 @@ struct GitStatusServiceTests {
         #expect(name.allSatisfy { $0.isHexDigit })
     }
 
+    // MARK: - diffStatus
+
+    @Test func diffStatusReturnsEmptyForCleanRepo() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.summary.isEmpty)
+        #expect(result.summary.totalCount == 0)
+        #expect(result.files.isEmpty)
+    }
+
+    @Test func diffStatusParsesModifiedFile() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        let readmePath = (repo as NSString).appendingPathComponent("README.md")
+        try "Modified content".write(toFile: readmePath, atomically: true, encoding: .utf8)
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.summary.modified == 1)
+        #expect(result.summary.totalCount == 1)
+        #expect(result.files.count == 1)
+        #expect(result.files[0].status == .modified)
+        #expect(result.files[0].path == "README.md")
+    }
+
+    @Test func diffStatusParsesUntrackedAsAdded() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        let newFilePath = (repo as NSString).appendingPathComponent("new.txt")
+        try "new file".write(toFile: newFilePath, atomically: true, encoding: .utf8)
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.summary.added == 1)
+        #expect(result.files.count == 1)
+        #expect(result.files[0].status == .added)
+    }
+
+    @Test func diffStatusParsesStagedAddedFile() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        let newFilePath = (repo as NSString).appendingPathComponent("staged.txt")
+        try "staged content".write(toFile: newFilePath, atomically: true, encoding: .utf8)
+        try runGitSync(["add", "staged.txt"], in: repo)
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.summary.added == 1)
+        #expect(result.files[0].status == .added)
+        #expect(result.files[0].path == "staged.txt")
+    }
+
+    @Test func diffStatusParsesDeletedFile() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        let readmePath = (repo as NSString).appendingPathComponent("README.md")
+        try FileManager.default.removeItem(atPath: readmePath)
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.summary.deleted == 1)
+        #expect(result.files.count == 1)
+        #expect(result.files[0].status == .deleted)
+    }
+
+    @Test func diffStatusParsesRenamedFile() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        try runGitSync(["mv", "README.md", "RENAMED.md"], in: repo)
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.summary.renamed == 1)
+        #expect(result.files.count == 1)
+        #expect(result.files[0].status == .renamed)
+        #expect(result.files[0].path == "RENAMED.md")
+    }
+
+    @Test func diffStatusParsesMultipleChanges() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        // Modify existing file
+        let readmePath = (repo as NSString).appendingPathComponent("README.md")
+        try "Modified".write(toFile: readmePath, atomically: true, encoding: .utf8)
+
+        // Add new untracked files
+        for name in ["new1.txt", "new2.txt"] {
+            let path = (repo as NSString).appendingPathComponent(name)
+            try "content".write(toFile: path, atomically: true, encoding: .utf8)
+        }
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.summary.modified == 1)
+        #expect(result.summary.added == 2)
+        #expect(result.summary.totalCount == 3)
+        #expect(result.files.count == 3)
+    }
+
+    @Test func diffStatusCapsFilesAt100() async throws {
+        let repo = try makeTempGitRepo()
+        defer { cleanup(repo) }
+
+        for i in 1...150 {
+            let path = (repo as NSString).appendingPathComponent("file_\(String(format: "%03d", i)).txt")
+            try "content".write(toFile: path, atomically: true, encoding: .utf8)
+        }
+
+        let result = await GitStatusService.diffStatus(directory: repo)
+        #expect(result.files.count == 100)
+        #expect(result.summary.added == 150)
+        #expect(result.summary.totalCount == 150)
+    }
+
     // MARK: - Helpers
 
     private func makeTempGitRepo() throws -> String {
