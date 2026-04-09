@@ -201,4 +201,49 @@ struct IPCCommandHandlerTests {
         // removeWorktreeSpace returns early (no-op) when space not found
         #expect(response.ok == true)
     }
+
+    // MARK: - Pane Restore Command
+
+    @Test @MainActor func setRestoreCommandMissingCommandReturnsError() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let request = IPCRequest(version: 1, command: "pane.set-restore-command", params: [:], env: dummyEnv)
+        let response = await handler.handle(request)
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+        #expect(response.error?.message.contains("Missing required parameter: command") == true)
+    }
+
+    @Test @MainActor func setRestoreCommandInvalidPaneUUIDReturnsError() async {
+        let invalidEnv = IPCEnv(
+            paneId: "not-a-uuid",
+            tabId: "00000000-0000-0000-0000-000000000000",
+            spaceId: "00000000-0000-0000-0000-000000000000",
+            workspaceId: "00000000-0000-0000-0000-000000000000"
+        )
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let request = IPCRequest(
+            version: 1,
+            command: "pane.set-restore-command",
+            params: ["command": .string("claude --resume abc")],
+            env: invalidEnv
+        )
+        let response = await handler.handle(request)
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+        #expect(response.error?.message.contains("Invalid pane UUID") == true)
+    }
+
+    @Test @MainActor func setRestoreCommandNonexistentPaneReturnsError() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator())
+        let request = IPCRequest(
+            version: 1,
+            command: "pane.set-restore-command",
+            params: ["command": .string("claude --resume abc")],
+            env: dummyEnv
+        )
+        let response = await handler.handle(request)
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+        #expect(response.error?.message.contains("Pane not found") == true)
+    }
 }

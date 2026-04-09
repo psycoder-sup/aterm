@@ -55,6 +55,7 @@ final class IPCCommandHandler {
         case "pane.list":  return handlePaneList(request)
         case "pane.close": return handlePaneClose(request)
         case "pane.focus": return handlePaneFocus(request)
+        case "pane.set-restore-command": return handleSetRestoreCommand(request)
 
         // Status (Phase 4)
         case "status.set":   return handleStatusSet(request)
@@ -411,6 +412,23 @@ final class IPCCommandHandler {
         }
 
         paneViewModel.focusPane(paneID: targetId)
+        return .success()
+    }
+
+    private func handleSetRestoreCommand(_ request: IPCRequest) -> IPCResponse {
+        guard let command = stringParam("command", from: request.params) else {
+            return .failure(code: 1, message: "Missing required parameter: command")
+        }
+
+        guard let paneId = UUID(uuidString: request.env.paneId) else {
+            return .failure(code: 1, message: "Invalid pane UUID: \(request.env.paneId)")
+        }
+
+        guard let (_, paneViewModel, _) = resolvePane(id: paneId, tabId: nil) else {
+            return .failure(code: 1, message: "Pane not found: \(request.env.paneId)")
+        }
+
+        paneViewModel.setRestoreCommand(paneID: paneId, command: command)
         return .success()
     }
 
