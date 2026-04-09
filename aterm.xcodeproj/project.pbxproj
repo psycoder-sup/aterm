@@ -706,6 +706,8 @@
 				DB47D104030C9574D75AD295 /* Sources */,
 				550B8EA94A21B227BAD25D04 /* Bundle aterm-cli */,
 				EBA79DC170A5B43D7B9E7DAB /* Bundle Ghostty Resources */,
+				5A7B54FD31A63C8BE119977C /* Bundle Claude Wrapper */,
+				CDE8818D4A23001B2B737266 /* Bundle Claude Settings */,
 				78F62DBDDD415A1F2080CACF /* Resources */,
 				3F63FF66B0F0DDC850740454 /* Frameworks */,
 			);
@@ -794,6 +796,46 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "cp -f \"$BUILT_PRODUCTS_DIR/aterm-cli\" \"$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/MacOS/aterm-cli\"";
+		};
+		5A7B54FD31A63C8BE119977C /* Bundle Claude Wrapper */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/aterm/Resources/claude",
+			);
+			name = "Bundle Claude Wrapper";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/claude",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -f \"$SRCROOT/aterm/Resources/claude\" \"$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/claude\"\nchmod +x \"$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/claude\"\n";
+		};
+		CDE8818D4A23001B2B737266 /* Bundle Claude Settings */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/aterm/Resources/aterm-claude-settings.json",
+			);
+			name = "Bundle Claude Settings";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/aterm-claude-settings.json",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -f \"$SRCROOT/aterm/Resources/aterm-claude-settings.json\" \"$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/aterm-claude-settings.json\"";
 		};
 		EBA79DC170A5B43D7B9E7DAB /* Bundle Ghostty Resources */ = {
 			isa = PBXShellScriptBuildPhase;

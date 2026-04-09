@@ -42,6 +42,8 @@ targets:
       - path: aterm
         excludes:
           - "Vendor/**"
+          - "Resources/claude"
+          - "Resources/aterm-claude-settings.json"
     dependencies:
       - target: aterm-cli
       - package: TOMLKit
@@ -65,6 +67,20 @@ targets:
         outputFiles:
           - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/ghostty/
           - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/terminfo/
+      - script: |
+          cp -f "$SRCROOT/aterm/Resources/claude" "$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/claude"
+          chmod +x "$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/claude"
+        name: Bundle Claude Wrapper
+        inputFiles:
+          - $(SRCROOT)/aterm/Resources/claude
+        outputFiles:
+          - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/claude
+      - script: cp -f "$SRCROOT/aterm/Resources/aterm-claude-settings.json" "$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/aterm-claude-settings.json"
+        name: Bundle Claude Settings
+        inputFiles:
+          - $(SRCROOT)/aterm/Resources/aterm-claude-settings.json
+        outputFiles:
+          - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/aterm-claude-settings.json
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aterm.app
