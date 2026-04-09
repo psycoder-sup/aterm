@@ -530,7 +530,7 @@ struct PaneSetRestoreCommand: ParsableCommand {
 struct StatusGroup: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "status",
-        abstract: "Manage pane status labels.",
+        abstract: "Manage pane status.",
         subcommands: [
             StatusSet.self,
             StatusClear.self,
@@ -541,14 +541,29 @@ struct StatusGroup: ParsableCommand {
 struct StatusSet: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "set",
-        abstract: "Set a status label for the current pane."
+        abstract: "Set a status label and/or session state for the current pane."
     )
 
     @Option(name: .long, help: "Status label text.")
-    var label: String
+    var label: String?
+
+    @Option(name: .long, help: "Claude session state (active, busy, idle, needs_attention, inactive).")
+    var state: String?
 
     func run() throws {
-        let response = try sendRequest(command: "status.set", params: ["label": .string(label)])
+        guard label != nil || state != nil else {
+            throw CLIError.general("At least one of --label or --state must be provided.")
+        }
+
+        var params: [String: IPCValue] = [:]
+        if let label {
+            params["label"] = .string(label)
+        }
+        if let state {
+            params["state"] = .string(state)
+        }
+
+        let response = try sendRequest(command: "status.set", params: params)
         try handleVoidResponse(response)
     }
 }

@@ -167,6 +167,45 @@ struct IPCCommandHandlerTests {
         #expect(response.error?.message.contains("Pane not found") == true)
     }
 
+    // MARK: - Status Set with State Only (CLI Extension)
+
+    @Test @MainActor func statusSetWithStateOnlyValidatesStateParam() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator(), statusManager: PaneStatusManager())
+        let request = IPCRequest(
+            version: 1,
+            command: "status.set",
+            params: ["state": .string("busy")],
+            env: dummyEnv
+        )
+        let response = await handler.handle(request)
+        // Passes param validation (state is valid), fails at pane lookup (dummyEnv uses zero UUID)
+        #expect(response.ok == false)
+        #expect(response.error?.message.contains("Pane not found") == true)
+    }
+
+    @Test @MainActor func statusSetWithStateAndLabelValidationWorks() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator(), statusManager: PaneStatusManager())
+        let request = IPCRequest(
+            version: 1,
+            command: "status.set",
+            params: ["state": .string("active"), "label": .string("Testing coexistence")],
+            env: dummyEnv
+        )
+        let response = await handler.handle(request)
+        // Passes param validation (both state and label are provided), fails at pane lookup
+        #expect(response.ok == false)
+        #expect(response.error?.message.contains("Pane not found") == true)
+    }
+
+    @Test @MainActor func statusSetWithEmptyParamsStillValidatesError() async {
+        let handler = IPCCommandHandler(windowCoordinator: WindowCoordinator(), statusManager: PaneStatusManager())
+        let request = IPCRequest(version: 1, command: "status.set", params: [:], env: dummyEnv)
+        let response = await handler.handle(request)
+        #expect(response.ok == false)
+        #expect(response.error?.code == 1)
+        #expect(response.error?.message.contains("at least one of") == true)
+    }
+
     // MARK: - Notify Commands
 
     @Test @MainActor func notifyMissingMessageReturnsError() async {
