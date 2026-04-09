@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "aterm-cli pane set-restore-command --command 'claude --resume $SESSION_ID'"
+      }
+    ]
+  }
+}
