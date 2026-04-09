@@ -306,6 +306,8 @@ final class PaneViewModel {
     // MARK: - Cleanup
 
     func cleanup() {
+        let paneIDs = splitTree.allLeaves()
+
         for surface in surfaces.values {
             surface.freeSurface()
         }
@@ -317,6 +319,11 @@ final class PaneViewModel {
             NotificationCenter.default.removeObserver(observer)
         }
         observers.removeAll()
+
+        for paneID in paneIDs {
+            PaneStatusManager.shared.clearStatus(paneID: paneID)
+            onPaneRemoved?(paneID)
+        }
     }
 
     deinit {

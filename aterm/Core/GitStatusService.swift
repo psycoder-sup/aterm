@@ -261,7 +261,9 @@ enum GitStatusService {
                 }
             }
         } onCancel: {
-            process.terminate()
+            if process.isRunning {
+                process.terminate()
+            }
         }
     }
 
@@ -290,34 +292,40 @@ enum GitStatusService {
         _ arguments: [String],
         workingDirectory: String
     ) async throws -> (exitCode: Int32, stdout: String, stderr: String) {
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let process = Process()
-                process.executableURL = URL(filePath: "/usr/bin/git")
-                process.arguments = arguments
-                process.currentDirectoryURL = URL(filePath: workingDirectory)
+        let process = Process()
+        process.executableURL = URL(filePath: "/usr/bin/git")
+        process.arguments = arguments
+        process.currentDirectoryURL = URL(filePath: workingDirectory)
 
-                let stdoutPipe = Pipe()
-                let stderrPipe = Pipe()
-                process.standardOutput = stdoutPipe
-                process.standardError = stderrPipe
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let stdoutPipe = Pipe()
+                    let stderrPipe = Pipe()
+                    process.standardOutput = stdoutPipe
+                    process.standardError = stderrPipe
 
-                do {
-                    try process.run()
-                } catch {
-                    continuation.resume(throwing: error)
-                    return
+                    do {
+                        try process.run()
+                    } catch {
+                        continuation.resume(throwing: error)
+                        return
+                    }
+
+                    let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                    let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                    process.waitUntilExit()
+
+                    let stdout = String(data: stdoutData, encoding: .utf8)?
+                        .trimmingCharacters(in: .newlines) ?? ""
+                    let stderr = String(data: stderrData, encoding: .utf8)?
+                        .trimmingCharacters(in: .newlines) ?? ""
+                    continuation.resume(returning: (process.terminationStatus, stdout, stderr))
                 }
-
-                let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-                let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-                process.waitUntilExit()
-
-                let stdout = String(data: stdoutData, encoding: .utf8)?
-                    .trimmingCharacters(in: .newlines) ?? ""
-                let stderr = String(data: stderrData, encoding: .utf8)?
-                    .trimmingCharacters(in: .newlines) ?? ""
-                continuation.resume(returning: (process.terminationStatus, stdout, stderr))
+            }
+        } onCancel: {
+            if process.isRunning {
+                process.terminate()
             }
         }
     }

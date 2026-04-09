@@ -89,8 +89,6 @@ final class SpaceGitContext {
         }
 
         // Detect new repo — pane may be moving to a different repo or a non-git dir
-        let previousRepoID = paneRepoAssignments[paneID]
-
         Task { [weak self] in
             guard let self else { return }
 
@@ -98,6 +96,10 @@ final class SpaceGitContext {
 
             if let repo {
                 let newRepoID = GitRepoID(path: repo.commonDir)
+
+                // Read current assignment AFTER await to avoid stale capture
+                // (rapid calls could have reassigned pane to an intermediate repo)
+                let previousRepoID = self.paneRepoAssignments[paneID]
 
                 // Update pane assignment
                 self.paneRepoAssignments[paneID] = newRepoID
