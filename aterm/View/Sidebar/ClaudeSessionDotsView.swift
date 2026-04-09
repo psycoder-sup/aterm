@@ -4,6 +4,17 @@ import SwiftUI
 struct ClaudeSessionDotsView: View {
     let sessions: [(id: UUID, state: ClaudeSessionState)]
 
+    /// Convenience: render dots from a pre-sorted state array (no pane IDs needed).
+    init(states: [ClaudeSessionState]) {
+        self.sessions = states.enumerated().map { index, state in
+            (id: UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012d", index))")!, state: state)
+        }
+    }
+
+    init(sessions: [(id: UUID, state: ClaudeSessionState)]) {
+        self.sessions = sessions
+    }
+
     var body: some View {
         HStack(spacing: 3) {
             ForEach(sessions, id: \.id) { session in
