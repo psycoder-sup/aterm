@@ -16,7 +16,7 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
     /// - Parameters:
     ///   - view: The NSView that hosts the surface.
     ///   - workingDirectory: Optional initial working directory for the shell.
-    func createSurface(view: TerminalSurfaceView, workingDirectory: String? = nil, environmentVariables: [String: String] = [:]) {
+    func createSurface(view: TerminalSurfaceView, workingDirectory: String? = nil, environmentVariables: [String: String] = [:], initialInput: String? = nil) {
         guard let ghosttyApp = GhosttyApp.shared.app else {
             Log.ghostty.error("Cannot create surface: GhosttyApp not initialized")
             return
@@ -65,7 +65,10 @@ final class GhosttyTerminalSurface: @unchecked Sendable {
             config.env_var_count = envBuffer.count
             return workingDirectory.withCString { cWd in
                 config.working_directory = cWd
-                return ghostty_surface_new(ghosttyApp, &config)
+                return initialInput.withCString { cInput in
+                    config.initial_input = cInput
+                    return ghostty_surface_new(ghosttyApp, &config)
+                }
             }
         }
         let surfaceMs = Double((clock.now - surfaceStart).components.attoseconds) / 1e15

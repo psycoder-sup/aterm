@@ -25,6 +25,9 @@ final class TerminalSurfaceView: NSView {
     /// Environment variables to inject into the shell session (ATERM_* keys + PATH).
     var environmentVariables: [String: String] = [:]
 
+    /// Restore command to replay into the shell on surface creation (e.g. "claude --resume <id>").
+    var initialInput: String?
+
     /// When true, keyboard and mouse input is suppressed (pane is exited/failed).
     var isInputSuppressed: Bool = false
 
@@ -54,7 +57,7 @@ final class TerminalSurfaceView: NSView {
 
         // Create surface when view is attached to a window
         if let terminalSurface, terminalSurface.surface == nil {
-            terminalSurface.createSurface(view: self, workingDirectory: initialWorkingDirectory, environmentVariables: environmentVariables)
+            terminalSurface.createSurface(view: self, workingDirectory: initialWorkingDirectory, environmentVariables: environmentVariables, initialInput: initialInput)
         }
 
         updateSurfaceSize()
