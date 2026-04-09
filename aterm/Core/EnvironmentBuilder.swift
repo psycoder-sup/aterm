@@ -22,6 +22,7 @@ enum EnvironmentBuilder {
         let macOSDir = Bundle.main.executableURL!
             .deletingLastPathComponent()
             .path
+        let resourcesDir = Bundle.main.resourceURL?.path ?? ""
         let existingPath = ProcessInfo.processInfo.environment["PATH"] ?? ""
 
         return [
@@ -31,7 +32,7 @@ enum EnvironmentBuilder {
             "ATERM_SPACE_ID": spaceID.uuidString,
             "ATERM_WORKSPACE_ID": workspaceID.uuidString,
             "ATERM_CLI_PATH": cliPath,
-            "PATH": "\(macOSDir):\(existingPath)",
+            "PATH": "\(resourcesDir):\(macOSDir):\(existingPath)",
         ]
     }
 }

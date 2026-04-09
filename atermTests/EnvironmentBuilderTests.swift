@@ -77,6 +77,6 @@ struct EnvironmentBuilderTests {
         )
         let path = try #require(env["PATH"])
         #expect(path.contains(originalPath))
-        #expect(path.hasPrefix(Bundle.main.executableURL!.deletingLastPathComponent().path))
+        #expect(path.hasPrefix(Bundle.main.resourceURL!.path))
     }
 }
