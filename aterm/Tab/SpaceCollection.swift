@@ -75,6 +75,7 @@ final class SpaceCollection {
         for tab in space.tabs {
             tab.cleanup()
         }
+        space.gitContext.teardown()
         spaces.remove(at: index)
 
         if spaces.isEmpty {

@@ -31,6 +31,12 @@ struct SpaceStatusAreaView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
+
+            ForEach(space.gitContext.pinnedRepoOrder, id: \.self) { repoID in
+                if let repoStatus = space.gitContext.repoStatuses[repoID] {
+                    RepoStatusLineView(repoStatus: repoStatus)
+                }
+            }
         }
     }
 }

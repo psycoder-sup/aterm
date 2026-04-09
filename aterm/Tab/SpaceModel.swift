@@ -14,6 +14,9 @@ final class SpaceModel: Identifiable {
     /// Filesystem path of the associated git worktree. When non-nil, identifies this Space as worktree-backed.
     var worktreePath: URL?
 
+    /// Per-Space git repository context. Tracks repos, branch names, and status for sidebar display.
+    let gitContext: SpaceGitContext
+
     /// The owning workspace's default directory, set by SpaceCollection/Workspace.
     var workspaceDefaultDirectory: URL?
 
@@ -29,9 +32,11 @@ final class SpaceModel: Identifiable {
         self.tabs = [initialTab]
         self.activeTabID = initialTab.id
         self.createdAt = Date()
+        self.gitContext = SpaceGitContext(worktreePath: nil)
 
         wireTabClose(initialTab)
         wireDirectoryFallback(initialTab)
+        wireGitContext(initialTab)
     }
 
     /// Restore a space with specific ID, pre-built tabs, and active tab selection.
@@ -44,10 +49,16 @@ final class SpaceModel: Identifiable {
             : tabs[0].id
         self.createdAt = Date()
         self.defaultWorkingDirectory = defaultWorkingDirectory
+        self.gitContext = SpaceGitContext(worktreePath: nil)
 
         for tab in tabs {
             wireTabClose(tab)
             wireDirectoryFallback(tab)
+            wireGitContext(tab)
+            // Seed git context with persisted pane directories
+            for (paneID, wd) in tab.paneViewModel.splitTree.allLeafInfo() {
+                gitContext.paneAdded(paneID: paneID, workingDirectory: wd)
+            }
         }
     }
 
@@ -65,6 +76,9 @@ final class SpaceModel: Identifiable {
         wireTabClose(tab)
         wireDirectoryFallback(tab)
         wireHierarchyContext(tab)
+        wireGitContext(tab)
+        let initialPaneID = tab.paneViewModel.splitTree.focusedPaneID
+        gitContext.paneAdded(paneID: initialPaneID, workingDirectory: workingDirectory)
         tabs.append(tab)
         activeTabID = tab.id
         return tab
@@ -161,6 +175,15 @@ final class SpaceModel: Identifiable {
     private func wireTabClose(_ tab: TabModel) {
         tab.onEmpty = { [weak self, tabID = tab.id] in
             self?.removeTab(id: tabID)
+        }
+    }
+
+    private func wireGitContext(_ tab: TabModel) {
+        tab.paneViewModel.onPaneDirectoryChanged = { [weak self] paneID, directory in
+            self?.gitContext.paneWorkingDirectoryChanged(paneID: paneID, newDirectory: directory)
+        }
+        tab.paneViewModel.onPaneRemoved = { [weak self] paneID in
+            self?.gitContext.paneRemoved(paneID: paneID)
         }
     }
 
