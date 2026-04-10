@@ -6,11 +6,33 @@
         "hooks": [
           {
             "type": "command",
-            "command": "aterm-cli pane set-restore-command --command 'claude --resume $SESSION_ID'"
+            "command": "aterm-cli pane set-restore-command --command 'claude --resume $SESSION_ID' 2>/dev/null || true"
           },
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state active"
+            "command": "$ATERM_CLI_PATH status set --state active 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ATERM_CLI_PATH status set --state needs_attention 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ATERM_CLI_PATH status set --state busy 2>/dev/null || true"
           }
         ]
       }
@@ -21,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state busy"
+            "command": "$ATERM_CLI_PATH status set --state busy 2>/dev/null || true"
           }
         ]
       }
@@ -32,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state idle"
+            "command": "$ATERM_CLI_PATH status set --state idle 2>/dev/null || true"
           }
         ]
       }
@@ -43,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state idle"
+            "command": "$ATERM_CLI_PATH status set --state idle 2>/dev/null || true"
           }
         ]
       },
@@ -52,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state needs_attention"
+            "command": "$ATERM_CLI_PATH status set --state needs_attention 2>/dev/null || true"
           }
         ]
       }
@@ -63,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state inactive"
+            "command": "$ATERM_CLI_PATH status set --state inactive 2>/dev/null || true"
           }
         ]
       }
