@@ -644,6 +644,13 @@
 			path = View;
 			sourceTree = "<group>";
 		};
+		"TEMP_4C163E27-D1AE-4B0C-A569-C7459912E6F1" /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -711,6 +718,7 @@
 				EBA79DC170A5B43D7B9E7DAB /* Bundle Ghostty Resources */,
 				5A7B54FD31A63C8BE119977C /* Bundle Claude Wrapper */,
 				CDE8818D4A23001B2B737266 /* Bundle Claude Settings */,
+				49816AE59724D3344358DCBE /* Bundle Shell Integration */,
 				78F62DBDDD415A1F2080CACF /* Resources */,
 				3F63FF66B0F0DDC850740454 /* Frameworks */,
 			);
@@ -780,6 +788,33 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		49816AE59724D3344358DCBE /* Bundle Shell Integration */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/aterm/Resources/shell-integration/zsh/zshenv",
+				"$(SRCROOT)/aterm/Resources/shell-integration/zsh/zprofile",
+				"$(SRCROOT)/aterm/Resources/shell-integration/zsh/zshrc",
+				"$(SRCROOT)/aterm/Resources/shell-integration/zsh/zlogin",
+				"$(SRCROOT)/aterm/Resources/shell-integration/aterm-zsh-integration.zsh",
+				"$(SRCROOT)/aterm/Resources/shell-integration/aterm-bash-integration.bash",
+			);
+			name = "Bundle Shell Integration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/shell-integration/zsh/.zshenv",
+				"$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/shell-integration/aterm-zsh-integration.zsh",
+				"$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/shell-integration/aterm-bash-integration.bash",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "SI_SRC=\"$SRCROOT/aterm/Resources/shell-integration\"\nSI_DST=\"$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/shell-integration\"\nmkdir -p \"$SI_DST/zsh\"\n# Copy zsh dotfiles (renamed from non-dot source to dotfile in bundle)\nfor f in zshenv zprofile zshrc zlogin; do\n  cp -f \"$SI_SRC/zsh/$f\" \"$SI_DST/zsh/.$f\"\ndone\n# Copy integration scripts\ncp -f \"$SI_SRC/aterm-zsh-integration.zsh\" \"$SI_DST/aterm-zsh-integration.zsh\"\ncp -f \"$SI_SRC/aterm-bash-integration.bash\" \"$SI_DST/aterm-bash-integration.bash\"\n";
+		};
 		550B8EA94A21B227BAD25D04 /* Bundle aterm-cli */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
