@@ -81,11 +81,13 @@ struct PaneLeafState: Codable, Sendable, Equatable {
     let paneID: UUID
     let workingDirectory: String
     let restoreCommand: String?
+    let claudeSessionState: ClaudeSessionState?
 
-    init(paneID: UUID, workingDirectory: String, restoreCommand: String? = nil) {
+    init(paneID: UUID, workingDirectory: String, restoreCommand: String? = nil, claudeSessionState: ClaudeSessionState? = nil) {
         self.paneID = paneID
         self.workingDirectory = workingDirectory
         self.restoreCommand = restoreCommand
+        self.claudeSessionState = claudeSessionState
     }
 }
 
@@ -137,20 +139,21 @@ extension PaneNodeState: Codable {
 
 extension PaneNode {
     /// Converts the runtime PaneNode to its Codable state representation.
-    func toState(restoreCommands: [UUID: String] = [:]) -> PaneNodeState {
+    func toState(restoreCommands: [UUID: String] = [:], sessionStates: [UUID: ClaudeSessionState] = [:]) -> PaneNodeState {
         switch self {
         case .leaf(let paneID, let workingDirectory):
             return .pane(PaneLeafState(
                 paneID: paneID,
                 workingDirectory: workingDirectory,
-                restoreCommand: restoreCommands[paneID]
+                restoreCommand: restoreCommands[paneID],
+                claudeSessionState: sessionStates[paneID]
             ))
         case .split(_, let direction, let ratio, let first, let second):
             return .split(PaneSplitState(
                 direction: direction.stateValue,
                 ratio: ratio,
-                first: first.toState(restoreCommands: restoreCommands),
-                second: second.toState(restoreCommands: restoreCommands)
+                first: first.toState(restoreCommands: restoreCommands, sessionStates: sessionStates),
+                second: second.toState(restoreCommands: restoreCommands, sessionStates: sessionStates)
             ))
         }
     }

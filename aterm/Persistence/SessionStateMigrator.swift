@@ -17,6 +17,9 @@ enum SessionStateMigrator {
         // v1 → v2: Added optional worktreePath to SpaceState.
         // The field is optional so existing v1 data decodes correctly without transformation.
         1: { json in json },
+        // v2 → v3: Added optional claudeSessionState to PaneLeafState.
+        // The field is optional so existing v2 data decodes correctly without transformation.
+        2: { json in json },
     ]
 
     // MARK: - Errors

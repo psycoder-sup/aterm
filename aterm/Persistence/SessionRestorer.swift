@@ -243,7 +243,12 @@ enum SessionRestorer {
             if original == nil {
                 metrics.directoryFallbacks += 1
             }
-            return .pane(PaneLeafState(paneID: leaf.paneID, workingDirectory: resolved))
+            return .pane(PaneLeafState(
+                paneID: leaf.paneID,
+                workingDirectory: resolved,
+                restoreCommand: leaf.restoreCommand,
+                claudeSessionState: leaf.claudeSessionState
+            ))
 
         case .split(let split):
             return .split(PaneSplitState(

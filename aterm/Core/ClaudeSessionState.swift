@@ -2,7 +2,7 @@ import Foundation
 
 /// Typed session state for a Claude Code session attached to a pane.
 /// Priority ordering: needsAttention (1) > busy (2) > active (3) > idle (4) > inactive (5).
-enum ClaudeSessionState: String, Sendable, Equatable, CaseIterable {
+enum ClaudeSessionState: String, Codable, Sendable, Equatable, CaseIterable {
     case needsAttention = "needs_attention"
     case busy = "busy"
     case active = "active"

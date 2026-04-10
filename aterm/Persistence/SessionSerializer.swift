@@ -2,7 +2,7 @@ import Foundation
 
 /// Captures a snapshot of the live workspace model and writes it to disk as JSON.
 enum SessionSerializer {
-    static let currentVersion = 2
+    static let currentVersion = 3
 
     static var stateDirectory: URL {
         FileManager.default
@@ -27,6 +27,7 @@ enum SessionSerializer {
         windowFrame: WindowFrame? = nil,
         isFullscreen: Bool? = nil
     ) -> SessionState {
+        let sessionStates = PaneStatusManager.shared.sessionStates
         let workspaces = collection.workspaces.map { workspace in
             WorkspaceState(
                 id: workspace.id,
@@ -45,7 +46,10 @@ enum SessionSerializer {
                                 id: tab.id,
                                 name: tab.customName,
                                 activePaneId: tab.paneViewModel.splitTree.focusedPaneID,
-                                root: tab.paneViewModel.splitTree.root.toState(restoreCommands: tab.paneViewModel.restoreCommands)
+                                root: tab.paneViewModel.splitTree.root.toState(
+                                    restoreCommands: tab.paneViewModel.restoreCommands,
+                                    sessionStates: sessionStates
+                                )
                             )
                         }
                     )

@@ -749,10 +749,10 @@ struct SessionMigrationV1ToV2Tests {
         ]
 
         let result = try SessionStateMigrator.migrateIfNeeded(json: json)
-        #expect(result["version"] as? Int == 2)
+        #expect(result["version"] as? Int == SessionStateMigrator.currentVersion)
     }
 
-    @Test func v1DataMigratesToV2Data() throws {
+    @Test func v1DataMigratesToCurrentVersion() throws {
         let json: [String: Any] = [
             "version": 1,
             "savedAt": "2026-01-01T00:00:00Z",
@@ -765,7 +765,7 @@ struct SessionMigrationV1ToV2Tests {
         #expect(result != nil)
 
         let migrated = try JSONSerialization.jsonObject(with: result!) as! [String: Any]
-        #expect(migrated["version"] as? Int == 2)
+        #expect(migrated["version"] as? Int == SessionStateMigrator.currentVersion)
     }
 }
 

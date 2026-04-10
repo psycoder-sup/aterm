@@ -73,10 +73,14 @@ final class PaneViewModel {
         var surfaces: [UUID: GhosttyTerminalSurface] = [:]
         var surfaceViews: [UUID: TerminalSurfaceView] = [:]
         var restoreCommands: [UUID: String] = [:]
-        let paneNode = Self.buildPaneNode(from: root, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands)
+        var sessionStates: [UUID: ClaudeSessionState] = [:]
+        let paneNode = Self.buildPaneNode(from: root, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands, sessionStates: &sessionStates)
         let splitTree = SplitTree(root: paneNode, focusedPaneID: focusedPaneID)
         let pvm = PaneViewModel(splitTree: splitTree, surfaces: surfaces, surfaceViews: surfaceViews)
         pvm.restoreCommands = restoreCommands
+        for (paneID, state) in sessionStates {
+            PaneStatusManager.shared.setSessionState(paneID: paneID, state: state)
+        }
         return pvm
     }
 
@@ -171,7 +175,8 @@ final class PaneViewModel {
         from state: PaneNodeState,
         surfaces: inout [UUID: GhosttyTerminalSurface],
         surfaceViews: inout [UUID: TerminalSurfaceView],
-        restoreCommands: inout [UUID: String]
+        restoreCommands: inout [UUID: String],
+        sessionStates: inout [UUID: ClaudeSessionState]
     ) -> PaneNode {
         switch state {
         case .pane(let leaf):
@@ -185,15 +190,18 @@ final class PaneViewModel {
                 restoreCommands[leaf.paneID] = cmd
                 surfaceView.initialInput = cmd + "\n"
             }
+            if let state = leaf.claudeSessionState {
+                sessionStates[leaf.paneID] = state
+            }
             return .leaf(paneID: leaf.paneID, workingDirectory: leaf.workingDirectory)
 
         case .split(let split):
             guard let direction = SplitDirection.from(stateValue: split.direction) else {
                 // Invalid direction — treat as a single pane with the first leaf
-                return buildPaneNode(from: split.first, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands)
+                return buildPaneNode(from: split.first, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands, sessionStates: &sessionStates)
             }
-            let first = buildPaneNode(from: split.first, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands)
-            let second = buildPaneNode(from: split.second, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands)
+            let first = buildPaneNode(from: split.first, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands, sessionStates: &sessionStates)
+            let second = buildPaneNode(from: split.second, surfaces: &surfaces, surfaceViews: &surfaceViews, restoreCommands: &restoreCommands, sessionStates: &sessionStates)
             return .split(id: UUID(), direction: direction, ratio: split.ratio, first: first, second: second)
         }
     }
