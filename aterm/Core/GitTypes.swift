@@ -69,6 +69,7 @@ enum GitFileStatus: String, Sendable {
 // MARK: - PR
 
 struct PRStatus: Sendable {
+    let number: Int
     let state: PRState
     let url: URL
 }
@@ -78,17 +79,6 @@ enum PRState: String, Sendable {
     case draft
     case merged
     case closed
-}
-
-extension PRState {
-    var color: Color {
-        switch self {
-        case .open: .green
-        case .draft: .gray
-        case .merged: .purple
-        case .closed: .red
-        }
-    }
 }
 
 extension GitFileStatus {

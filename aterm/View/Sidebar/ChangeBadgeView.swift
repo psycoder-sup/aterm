@@ -1,33 +1,46 @@
 import SwiftUI
 
-/// Displays compact count badges for non-zero git diff categories.
+/// Combined +/- change badge showing additions and deletions.
 /// Shows a hover popover with the full file list.
-struct GitBadgesView: View {
+struct ChangeBadgeView: View {
     let diffSummary: GitDiffSummary
     var changedFiles: [GitChangedFile] = []
 
     @State private var isPopoverPresented = false
     @State private var hoverTask: Task<Void, Never>?
 
+    private var additions: Int {
+        diffSummary.added + diffSummary.modified + diffSummary.renamed + diffSummary.unmerged
+    }
+
+    private var deletions: Int {
+        diffSummary.deleted
+    }
+
     var body: some View {
         if !diffSummary.isEmpty {
-            HStack(spacing: 4) {
-                if diffSummary.modified > 0 {
-                    badgePill(count: diffSummary.modified, letter: "M")
+            HStack(spacing: 0) {
+                if additions > 0 {
+                    Text("+\(additions)")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(Color(red: 0.302, green: 0.698, blue: 0.4))
+                        .padding(.leading, 5)
+                        .padding(.trailing, 4)
+                        .padding(.vertical, 2)
+                        .background(Color(red: 0.2, green: 0.502, blue: 0.278).opacity(0.5))
                 }
-                if diffSummary.added > 0 {
-                    badgePill(count: diffSummary.added, letter: "A")
-                }
-                if diffSummary.deleted > 0 {
-                    badgePill(count: diffSummary.deleted, letter: "D")
-                }
-                if diffSummary.renamed > 0 {
-                    badgePill(count: diffSummary.renamed, letter: "R")
-                }
-                if diffSummary.unmerged > 0 {
-                    badgePill(count: diffSummary.unmerged, letter: "U")
+
+                if deletions > 0 {
+                    Text("−\(deletions)")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(Color(red: 0.8, green: 0.35, blue: 0.35))
+                        .padding(.leading, 4)
+                        .padding(.trailing, 5)
+                        .padding(.vertical, 2)
+                        .background(Color(red: 0.502, green: 0.2, blue: 0.2).opacity(0.5))
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: 4))
             .onHover { hovering in
                 hoverTask?.cancel()
                 if hovering {
@@ -58,17 +71,5 @@ struct GitBadgesView: View {
                     }
             }
         }
-    }
-
-    private func badgePill(count: Int, letter: String) -> some View {
-        Text("\(count)\(letter)")
-            .font(.system(size: 9, design: .monospaced))
-            .foregroundStyle(Color(white: 0.45))
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.white.opacity(0.06))
-            )
     }
 }

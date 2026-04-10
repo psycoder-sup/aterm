@@ -183,7 +183,7 @@ enum GitStatusService {
         do {
             let result = try await runProcess(
                 executablePath: "/usr/bin/env",
-                arguments: ["gh", "pr", "view", "--head", branch, "--json", "state,url,isDraft"],
+                arguments: ["gh", "pr", "view", "--head", branch, "--json", "number,state,url,isDraft"],
                 workingDirectory: directory
             )
             guard result.exitCode == 0, !result.stdout.isEmpty else {
@@ -193,6 +193,7 @@ enum GitStatusService {
 
             guard let data = result.stdout.data(using: .utf8),
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let prNumber = json["number"] as? Int,
                   let stateString = json["state"] as? String,
                   let urlString = json["url"] as? String,
                   let url = URL(string: urlString) else {
@@ -217,7 +218,7 @@ enum GitStatusService {
             }
 
             Log.git.debug("PR status for \(branch): \(state.rawValue), url: \(urlString)")
-            return PRStatus(state: state, url: url)
+            return PRStatus(number: prNumber, state: state, url: url)
         } catch {
             Log.git.debug("fetchPRStatus failed for \(branch): \(error)")
             return nil

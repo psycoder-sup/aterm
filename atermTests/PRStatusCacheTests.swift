@@ -15,7 +15,7 @@ struct PRStatusCacheTests {
         nonisolated(unsafe) var currentTime = Date(timeIntervalSince1970: 1000)
         let cache = PRStatusCache(now: { currentTime })
 
-        let pr = PRStatus(state: .open, url: URL(string: "https://github.com/test/pr/1")!)
+        let pr = PRStatus(number: 1, state: .open, url: URL(string: "https://github.com/test/pr/1")!)
         cache.set(repoID: GitRepoID(path: "/repo"), branch: "main", status: pr)
 
         currentTime = Date(timeIntervalSince1970: 1059)
@@ -27,7 +27,7 @@ struct PRStatusCacheTests {
         nonisolated(unsafe) var currentTime = Date(timeIntervalSince1970: 1000)
         let cache = PRStatusCache(now: { currentTime })
 
-        let pr = PRStatus(state: .open, url: URL(string: "https://github.com/test/pr/1")!)
+        let pr = PRStatus(number: 1, state: .open, url: URL(string: "https://github.com/test/pr/1")!)
         cache.set(repoID: GitRepoID(path: "/repo"), branch: "main", status: pr)
 
         currentTime = Date(timeIntervalSince1970: 1061)
@@ -76,7 +76,7 @@ struct PRStatusCacheTests {
 
     @Test func evictAllClearsEverything() {
         let cache = PRStatusCache()
-        let pr = PRStatus(state: .merged, url: URL(string: "https://github.com/test/pr/2")!)
+        let pr = PRStatus(number: 2, state: .merged, url: URL(string: "https://github.com/test/pr/2")!)
         cache.set(repoID: GitRepoID(path: "/repo"), branch: "main", status: pr)
         _ = cache.markPending(repoID: GitRepoID(path: "/repo2"), branch: "dev")
 

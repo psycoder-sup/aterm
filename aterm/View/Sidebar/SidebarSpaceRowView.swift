@@ -73,34 +73,30 @@ struct SidebarSpaceRowView: View {
     var body: some View {
         let sessions = PaneStatusManager.shared.sessionStates(in: space)
 
-        HStack(spacing: 8) {
-            Circle()
-                .fill(isActive ? Color.green : Color(white: 0.5, opacity: 0.4))
-                .frame(width: 6, height: 6)
-
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
                 InlineRenameView(
                     text: space.name,
                     isRenaming: $isRenaming,
                     onCommit: { space.name = $0 }
                 )
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(isActive ? Color(white: 0.9) : .secondary)
+                .foregroundStyle(isActive ? Color(white: 0.9) : Color(red: 0.557, green: 0.557, blue: 0.576))
 
-                SpaceStatusAreaView(sessions: sessions, space: space, isActive: isActive)
+                Spacer()
+
+                Text(tabCountLabel)
+                    .font(.system(size: 9))
+                    .foregroundStyle(Color(white: 0.45))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.white.opacity(0.06))
+                    )
             }
 
-            Spacer()
-
-            Text(tabCountLabel)
-                .font(.system(size: 9))
-                .foregroundStyle(Color(white: 0.45))
-                .padding(.horizontal, 5)
-                .padding(.vertical, 1)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.06))
-                )
+            SpaceStatusAreaView(sessions: sessions, space: space, isActive: isActive)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

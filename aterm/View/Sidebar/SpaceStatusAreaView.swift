@@ -9,7 +9,7 @@ struct SpaceStatusAreaView: View {
 
     private let maxVisibleLines = 3
 
-    private var statusColor: Color {
+    private var subtitleColor: Color {
         if isActive {
             Color(red: 0.35, green: 0.6, blue: 1.0).opacity(0.7)
         } else {
@@ -17,8 +17,7 @@ struct SpaceStatusAreaView: View {
         }
     }
 
-    /// Claude sessions grouped by repo (nil key = no repo).
-    private var sessionsByRepo: [GitRepoID?: [ClaudeSessionState]] {
+    private func groupSessionsByRepo() -> [GitRepoID?: [ClaudeSessionState]] {
         var grouped: [GitRepoID?: [ClaudeSessionState]] = [:]
         for session in sessions {
             let repoID = space.gitContext.paneRepoAssignments[session.paneID]
@@ -30,16 +29,11 @@ struct SpaceStatusAreaView: View {
         return grouped
     }
 
-    private var repoOrder: [GitRepoID] {
-        space.gitContext.pinnedRepoOrder
-    }
-
-    private var nonRepoDots: [ClaudeSessionState] {
-        sessionsByRepo[nil] ?? []
-    }
-
     var body: some View {
         let latestStatus = PaneStatusManager.shared.latestStatus(in: space)
+        let repoOrder = space.gitContext.pinnedRepoOrder
+        let sessionsByRepo = groupSessionsByRepo()
+        let nonRepoDots = sessionsByRepo[nil] ?? []
         let hasRepoLines = !repoOrder.isEmpty
         let hasNonRepoDots = !nonRepoDots.isEmpty
         let hasSessions = !sessions.isEmpty
@@ -54,6 +48,7 @@ struct SpaceStatusAreaView: View {
 
                         RepoStatusLineView(
                             repoStatus: repoStatus,
+                            subtitleColor: subtitleColor,
                             claudeDots: repoDots,
                             prependedDots: prependedDots
                         )
@@ -76,7 +71,7 @@ struct SpaceStatusAreaView: View {
             if let status = latestStatus {
                 Text(String(status.label.prefix(50)))
                     .font(.system(size: 10))
-                    .foregroundStyle(statusColor)
+                    .foregroundStyle(subtitleColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
