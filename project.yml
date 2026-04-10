@@ -44,6 +44,7 @@ targets:
           - "Vendor/**"
           - "Resources/claude"
           - "Resources/aterm-claude-settings.json"
+          - "Resources/shell-integration/**"
     dependencies:
       - target: aterm-cli
       - package: TOMLKit
@@ -81,6 +82,29 @@ targets:
           - $(SRCROOT)/aterm/Resources/aterm-claude-settings.json
         outputFiles:
           - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/aterm-claude-settings.json
+      - script: |
+          SI_SRC="$SRCROOT/aterm/Resources/shell-integration"
+          SI_DST="$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/shell-integration"
+          mkdir -p "$SI_DST/zsh"
+          # Copy zsh dotfiles (renamed from non-dot source to dotfile in bundle)
+          for f in zshenv zprofile zshrc zlogin; do
+            cp -f "$SI_SRC/zsh/$f" "$SI_DST/zsh/.$f"
+          done
+          # Copy integration scripts
+          cp -f "$SI_SRC/aterm-zsh-integration.zsh" "$SI_DST/aterm-zsh-integration.zsh"
+          cp -f "$SI_SRC/aterm-bash-integration.bash" "$SI_DST/aterm-bash-integration.bash"
+        name: Bundle Shell Integration
+        inputFiles:
+          - $(SRCROOT)/aterm/Resources/shell-integration/zsh/zshenv
+          - $(SRCROOT)/aterm/Resources/shell-integration/zsh/zprofile
+          - $(SRCROOT)/aterm/Resources/shell-integration/zsh/zshrc
+          - $(SRCROOT)/aterm/Resources/shell-integration/zsh/zlogin
+          - $(SRCROOT)/aterm/Resources/shell-integration/aterm-zsh-integration.zsh
+          - $(SRCROOT)/aterm/Resources/shell-integration/aterm-bash-integration.bash
+        outputFiles:
+          - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/shell-integration/zsh/.zshenv
+          - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/shell-integration/aterm-zsh-integration.zsh
+          - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/shell-integration/aterm-bash-integration.bash
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aterm.app

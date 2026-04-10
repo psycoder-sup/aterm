@@ -29,7 +29,7 @@ struct EnvironmentBuilderTests {
 
     // MARK: - EnvironmentBuilder
 
-    @Test func returnsAllSevenKeys() {
+    @Test func returnsAllKeys() {
         let env = EnvironmentBuilder.buildPaneEnvironment(
             socketPath: socketPath,
             paneID: paneID,
@@ -38,13 +38,17 @@ struct EnvironmentBuilderTests {
             workspaceID: workspaceID,
             cliPath: cliPath
         )
-        #expect(env.count == 7)
+        #expect(env.count == 11)
         #expect(env.keys.contains("ATERM_SOCKET"))
         #expect(env.keys.contains("ATERM_PANE_ID"))
         #expect(env.keys.contains("ATERM_TAB_ID"))
         #expect(env.keys.contains("ATERM_SPACE_ID"))
         #expect(env.keys.contains("ATERM_WORKSPACE_ID"))
         #expect(env.keys.contains("ATERM_CLI_PATH"))
+        #expect(env.keys.contains("ATERM_RESOURCES_DIR"))
+        #expect(env.keys.contains("ATERM_SHELL_INTEGRATION_DIR"))
+        #expect(env.keys.contains("ZDOTDIR"))
+        #expect(env.keys.contains("ATERM_ORIGINAL_ZDOTDIR"))
         #expect(env.keys.contains("PATH"))
     }
 
