@@ -244,7 +244,8 @@ struct IPCServerTests {
     @Test func socketPathContainsUID() {
         let path = IPCServer.socketPath
         let uid = getuid()
-        #expect(path.contains("aterm-\(uid).sock"))
+        #expect(path.hasSuffix("-\(uid).sock"))
+        #expect(path.contains("aterm"))
     }
 }
 

@@ -6,7 +6,8 @@ import Foundation
 final class IPCServer: Sendable {
     static var socketPath: String {
         let tmpdir = NSTemporaryDirectory()
-        return "\(tmpdir)aterm-\(getuid()).sock"
+        let suffix = (Bundle.main.bundleIdentifier?.hasSuffix(".debug") ?? false) ? "-debug" : ""
+        return "\(tmpdir)aterm\(suffix)-\(getuid()).sock"
     }
 
     private let commandHandler: @Sendable (IPCRequest) async -> IPCResponse

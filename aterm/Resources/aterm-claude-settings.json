@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "aterm-cli pane set-restore-command --command 'claude --resume $SESSION_ID' 2>/dev/null || true"
+            "command": "jq -r '.session_id' | xargs -I{} aterm-cli pane set-restore-command --command 'claude --resume {}' 2>/dev/null || true"
           },
           {
             "type": "command",
