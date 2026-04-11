@@ -10,7 +10,7 @@ struct BusyDotView: View {
     var body: some View {
         TimelineView(reduceMotion ? .animation(minimumInterval: nil, paused: true) : .animation(minimumInterval: 0.1)) { timeline in
             let t = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
-            let s = CGFloat(t) * 0.25
+            let s = CGFloat(t) * 0.8
 
             MeshGradient(
                 width: 3,
@@ -18,9 +18,25 @@ struct BusyDotView: View {
                 points: meshPoints(phase: s),
                 colors: meshColors(phase: s)
             )
+            .frame(width: 8, height: 8)
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .strokeBorder(
+                        AngularGradient(
+                            colors: [
+                                .white.opacity(0.0),
+                                .white.opacity(0.8),
+                            ],
+                            center: .center,
+                            startAngle: .degrees(0),
+                            endAngle: .degrees(360)
+                        ),
+                        lineWidth: 1
+                    )
+                    .rotationEffect(.degrees(t * 360))
+            )
         }
-        .frame(width: 8, height: 8)
-        .clipShape(Circle())
     }
 
     private func meshPoints(phase s: CGFloat) -> [SIMD2<Float>] {
@@ -49,9 +65,9 @@ struct BusyDotView: View {
         let n = t.truncatingRemainder(dividingBy: 4.0) / 4.0
         let angle = n * 2 * .pi
 
-        let r = 0.45 + 0.35 * cos(angle + 4.0)
-        let g = 0.15 + 0.15 * cos(angle + 2.5)
-        let b = 0.85 + 0.15 * sin(angle)
+        let r = 0.55 + 0.45 * cos(angle + 4.0)
+        let g = 0.20 + 0.20 * cos(angle + 2.5)
+        let b = 0.90 + 0.10 * sin(angle)
 
         return Color(red: r, green: g, blue: b)
     }
