@@ -28,7 +28,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "AskUserQuestion",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
@@ -59,6 +59,17 @@
         ]
       }
     ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ATERM_CLI_PATH status set --state needs_attention 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "idle_prompt",
@@ -66,15 +77,6 @@
           {
             "type": "command",
             "command": "$ATERM_CLI_PATH status set --state idle 2>/dev/null || true"
-          }
-        ]
-      },
-      {
-        "matcher": "permission_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state needs_attention 2>/dev/null || true"
           }
         ]
       }
