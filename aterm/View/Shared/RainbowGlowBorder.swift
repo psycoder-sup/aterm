@@ -19,22 +19,37 @@ private let glowCornerRadius: CGFloat = 6
 // MARK: - Focus indicator (sharp rainbow border, no glow)
 
 struct RainbowBorder: View {
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
-            let angle = Angle.degrees(timeline.date.timeIntervalSinceReferenceDate * 60)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    var body: some View {
+        if reduceMotion {
+            // Static gradient — no animation
             AngularGradient(
                 colors: rainbowColors,
-                center: .center,
-                startAngle: angle,
-                endAngle: angle + .degrees(360)
+                center: .center
             )
             .mask {
                 RoundedRectangle(cornerRadius: glowCornerRadius)
                     .strokeBorder(lineWidth: 2)
             }
+            .allowsHitTesting(false)
+        } else {
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+                let angle = Angle.degrees(timeline.date.timeIntervalSinceReferenceDate * 60)
+
+                AngularGradient(
+                    colors: rainbowColors,
+                    center: .center,
+                    startAngle: angle,
+                    endAngle: angle + .degrees(360)
+                )
+                .mask {
+                    RoundedRectangle(cornerRadius: glowCornerRadius)
+                        .strokeBorder(lineWidth: 2)
+                }
+            }
+            .allowsHitTesting(false)
         }
-        .allowsHitTesting(false)
     }
 }
 
