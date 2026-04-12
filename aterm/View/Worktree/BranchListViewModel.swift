@@ -44,7 +44,7 @@ final class BranchListViewModel {
     }
 
     func load(repoRoot: String) async {
-        // Placeholder until Task 6. For now just populate from the service once.
+        // Step 1: cache-only read (fast path)
         do {
             rawEntries = try await service.listBranches(repoRoot: repoRoot)
             loadError = nil
@@ -53,6 +53,24 @@ final class BranchListViewModel {
             loadError = error.localizedDescription
         }
         recomputeRows()
+
+        // Step 2: background fetch, refresh list when it finishes
+        isFetching = true
+        defer { isFetching = false }
+        do {
+            try await service.fetchRemotes(repoRoot: repoRoot)
+            usedCachedRemotes = false
+            do {
+                rawEntries = try await service.listBranches(repoRoot: repoRoot)
+                recomputeRows()
+            } catch {
+                // keep previously-loaded rows; surface the error
+                loadError = error.localizedDescription
+            }
+        } catch {
+            usedCachedRemotes = true
+            // silent fallback — cached rows already displayed
+        }
     }
 
     func moveHighlight(_ direction: Direction) {

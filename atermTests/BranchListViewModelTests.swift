@@ -250,4 +250,24 @@ struct BranchListViewModelTests {
         #expect(model.collision(for: "main")?.displayName == "main")
         #expect(model.collision(for: "feat/new") == nil)
     }
+
+    // MARK: - Load flow
+
+    @Test
+    func load_invokesFetchAfterInitialList() async {
+        let (model, service) = makeModel(entries: [entry(local: "a")])
+        await model.load(repoRoot: "/unused")
+        #expect(await service.fetchCalls == 1)
+        #expect(model.isFetching == false)
+        #expect(model.usedCachedRemotes == false)
+    }
+
+    @Test
+    func load_marksUsedCachedRemotesOnFetchFailure() async {
+        let (model, service) = makeModel(entries: [entry(local: "a")])
+        await service.setFetchShouldThrow(true)
+        await model.load(repoRoot: "/unused")
+        #expect(model.usedCachedRemotes == true)
+        #expect(model.rows.map(\.displayName) == ["a"])  // cached list still shown
+    }
 }
