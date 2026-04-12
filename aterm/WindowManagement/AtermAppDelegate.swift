@@ -31,7 +31,7 @@ class AtermAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCente
         } else if isUITesting {
             windowCoordinator.openWindow()
         } else {
-            windowCoordinator.openWindow(empty: true)
+            windowCoordinator.openEmptyWindow()
         }
 
         // Start IPC server

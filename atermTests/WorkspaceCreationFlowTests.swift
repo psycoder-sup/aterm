@@ -26,7 +26,6 @@ struct WorkspaceCreationFlowTests {
     }
 
     @Test func deriveName_emptyBasenameReturnsNil() {
-        // URL construction with empty path falls back — guard with a pathological case.
         let url = URL(filePath: "")
         #expect(WorkspaceCreationFlow.deriveWorkspaceName(from: url) == nil)
     }

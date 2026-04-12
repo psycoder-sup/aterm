@@ -29,12 +29,13 @@ final class WorkspaceCollection {
         wireWorkspaceClose(workspace)
     }
 
-    /// Initializes an empty collection with no default workspace.
-    /// Used on fresh launch before the user has picked a directory.
-    init(startingEmpty: Bool) {
-        precondition(startingEmpty, "Use init(workingDirectory:) for non-empty collections")
+    private init(empty: Void) {
         self.workspaces = []
         self.activeWorkspaceID = UUID()
+    }
+
+    static func empty() -> WorkspaceCollection {
+        WorkspaceCollection(empty: ())
     }
 
     /// Restore a workspace collection with pre-built workspaces.

@@ -102,6 +102,12 @@ struct WorkspaceWindowContent: View {
 
 // MARK: - Branch Input Context
 
+// Adding a 4th field here — or another sidebar notification that also needs
+// workspace-ID plumbing — is the signal to replace the `.showWorktreeBranchInput`
+// notification + stringly-typed userInfo keys with a direct callback passing
+// `Workspace`. That refactor collapses these fields into `let workspace: Workspace`
+// and turns `workspaceID: UUID?` (a retrofit for the cross-workspace bug) into a
+// non-optional ref.
 private struct BranchInputContext {
     let repoRoot: URL
     let worktreeDir: String

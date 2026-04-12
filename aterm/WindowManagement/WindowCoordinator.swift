@@ -5,14 +5,16 @@ final class WindowCoordinator {
     private var controllers: [WorkspaceWindowController] = []
     weak var workspaceManager: WorkspaceManager?
 
-    func openWindow(initialWorkingDirectory: String? = nil, empty: Bool = false) {
-        guard let manager = workspaceManager else { return }
+    func openWindow(initialWorkingDirectory: String? = nil) {
+        openController(with: WorkspaceCollection(workingDirectory: initialWorkingDirectory))
+    }
 
-        let collection: WorkspaceCollection = if empty {
-            WorkspaceCollection(startingEmpty: true)
-        } else {
-            WorkspaceCollection(workingDirectory: initialWorkingDirectory)
-        }
+    func openEmptyWindow() {
+        openController(with: WorkspaceCollection.empty())
+    }
+
+    private func openController(with collection: WorkspaceCollection) {
+        guard let manager = workspaceManager else { return }
         let controller = WorkspaceWindowController(
             workspaceCollection: collection,
             workspaceManager: manager,

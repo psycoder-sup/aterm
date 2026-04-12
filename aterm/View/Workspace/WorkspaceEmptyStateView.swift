@@ -28,7 +28,6 @@ struct WorkspaceEmptyStateView: View {
             }
             .controlSize(.large)
             .buttonStyle(.borderedProminent)
-            .keyboardShortcut("n", modifiers: [.command, .shift])
             .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
