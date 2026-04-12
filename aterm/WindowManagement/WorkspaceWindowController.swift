@@ -114,7 +114,9 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
                 WorkspaceCreationFlow.createWorkspace(in: self.workspaceCollection)
                 return nil
             case .closeWorkspace:
-                self.workspaceCollection.removeWorkspace(id: self.workspaceCollection.activeWorkspaceID)
+                if let id = self.workspaceCollection.activeWorkspaceID {
+                    self.workspaceCollection.removeWorkspace(id: id)
+                }
                 return nil
             case .toggleSidebar:
                 self.handleSidebarToggle()

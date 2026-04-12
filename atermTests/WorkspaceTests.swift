@@ -116,17 +116,27 @@ struct WorkspaceCollectionTests {
     @Test func emptyCollectionHasNoWorkspaces() {
         let collection = WorkspaceCollection.empty()
         #expect(collection.workspaces.isEmpty)
+        #expect(collection.activeWorkspaceID == nil)
         #expect(collection.activeWorkspace == nil)
         #expect(collection.activeSpaceCollection == nil)
     }
+
+    @Test func emptyCollectionCreateWorkspaceActivates() {
+        let collection = WorkspaceCollection.empty()
+        let ws = collection.createWorkspace(name: "first", workingDirectory: "/tmp/proj")
+        #expect(ws != nil)
+        #expect(collection.workspaces.count == 1)
+        #expect(collection.activeWorkspaceID == ws?.id)
+        #expect(collection.activeWorkspace?.id == ws?.id)
+    }
+
+    // MARK: - Creation
 
     @Test func createWorkspaceStoresWorkingDirectory() {
         let collection = WorkspaceCollection()
         let ws = collection.createWorkspace(name: "first", workingDirectory: "/tmp/proj")
         #expect(ws?.defaultWorkingDirectory?.path == "/tmp/proj")
     }
-
-    // MARK: - Creation
 
     @Test func createWorkspaceAppendsAndActivates() {
         let collection = WorkspaceCollection()
@@ -244,6 +254,7 @@ struct WorkspaceCollectionTests {
 
         collection.removeWorkspace(id: ws.id)
         #expect(collection.workspaces.isEmpty)
+        #expect(collection.activeWorkspaceID == nil)
         #expect(collection.activeWorkspace == nil)
     }
 

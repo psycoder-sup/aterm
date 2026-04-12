@@ -15,10 +15,9 @@ struct WorkspaceCommands: Commands {
             .keyboardShortcut("n", modifiers: [.command, .shift])
 
             Button("Close Workspace") {
-                if let controller = windowCoordinator.controllerForKeyWindow() {
-                    controller.workspaceCollection.removeWorkspace(
-                        id: controller.workspaceCollection.activeWorkspaceID
-                    )
+                if let controller = windowCoordinator.controllerForKeyWindow(),
+                   let id = controller.workspaceCollection.activeWorkspaceID {
+                    controller.workspaceCollection.removeWorkspace(id: id)
                 }
             }
             .keyboardShortcut(.delete, modifiers: [.command, .shift])

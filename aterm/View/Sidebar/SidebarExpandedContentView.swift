@@ -93,7 +93,9 @@ struct SidebarExpandedContentView: View {
             .allowsHitTesting(false)
         }
         .onAppear {
-            disclosedWorkspaces.insert(workspaceCollection.activeWorkspaceID)
+            if let id = workspaceCollection.activeWorkspaceID {
+                disclosedWorkspaces.insert(id)
+            }
         }
         .onChange(of: sidebarState.focusTarget) { _, newTarget in
             if newTarget == .sidebar {
