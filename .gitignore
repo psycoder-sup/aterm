@@ -16,6 +16,9 @@ build/
 # Scratch dir for temporary code/experiments (used instead of /tmp)
 .dev/tmp/
 
+# Superpowers brainstorming mockups
+.superpowers/
+
 # Swift Package Manager
 .build/
 Package.resolved
