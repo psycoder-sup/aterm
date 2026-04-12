@@ -19,6 +19,9 @@ final class WorktreeOrchestrator {
     /// Set to true when the user cancels setup commands.
     var setupCancelled: Bool = false
 
+    /// Last error surfaced by the orchestrator, for UI binding.
+    var lastError: WorktreeError?
+
     /// Temporary event monitor for Ctrl+C during setup commands.
     private var ctrlCMonitor: Any?
 
@@ -46,6 +49,7 @@ final class WorktreeOrchestrator {
     func createWorktreeSpace(
         branchName: String,
         existingBranch: Bool = false,
+        remoteRef: String? = nil,
         repoPath: String? = nil,
         workspaceID: UUID? = nil
     ) async throws -> WorktreeCreateResult {
@@ -83,7 +87,7 @@ final class WorktreeOrchestrator {
         }
 
         // Step 4: Pre-flight checks
-        if !existingBranch {
+        if !existingBranch && remoteRef == nil {
             let exists = try await WorktreeService.branchExists(
                 repoRoot: repoRoot, branchName: branchName
             )
@@ -108,7 +112,8 @@ final class WorktreeOrchestrator {
             repoRoot: repoRoot,
             worktreeDir: config.worktreeDir,
             branchName: branchName,
-            existingBranch: existingBranch
+            existingBranch: existingBranch,
+            remoteRef: remoteRef
         )
 
         // Steps 7-15 are wrapped so the on-disk worktree is cleaned up on failure.
@@ -185,6 +190,15 @@ final class WorktreeOrchestrator {
     /// Cancels any in-progress setup commands.
     func cancelSetup() {
         setupCancelled = true
+    }
+
+    /// Stores an error for the UI alert binding to consume.
+    func presentError(_ error: Error) {
+        if let wErr = error as? WorktreeError {
+            lastError = wErr
+        } else {
+            lastError = .gitError(command: "unknown", stderr: String(describing: error))
+        }
     }
 
     // MARK: - Creation Steps 7-15
