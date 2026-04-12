@@ -13,6 +13,9 @@ build/
 # macOS
 .DS_Store
 
+# Scratch dir for temporary code/experiments (used instead of /tmp)
+.dev/tmp/
+
 # Swift Package Manager
 .build/
 Package.resolved
