@@ -31,7 +31,7 @@ struct WorkspaceWindowContent: View {
                 BranchNameInputView(
                     repoRoot: ctx.repoRoot,
                     worktreeDir: ctx.worktreeDir,
-                    onSubmit: { branch, existing in
+                    onSubmit: { branch, existing, _ in
                         branchInputContext = nil
                         Task {
                             _ = try? await worktreeOrchestrator.createWorktreeSpace(
