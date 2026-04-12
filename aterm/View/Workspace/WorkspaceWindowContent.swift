@@ -31,22 +31,39 @@ struct WorkspaceWindowContent: View {
                 BranchNameInputView(
                     repoRoot: ctx.repoRoot,
                     worktreeDir: ctx.worktreeDir,
-                    onSubmit: { branch, existing in
+                    onSubmit: { branch, existing, remoteRef in
                         let captured = ctx
                         branchInputContext = nil
                         Task {
-                            _ = try? await worktreeOrchestrator.createWorktreeSpace(
-                                branchName: branch,
-                                existingBranch: existing,
-                                repoPath: captured.repoRoot.path,
-                                workspaceID: captured.workspaceID
-                            )
+                            do {
+                                _ = try await worktreeOrchestrator.createWorktreeSpace(
+                                    branchName: branch,
+                                    existingBranch: existing,
+                                    remoteRef: remoteRef,
+                                    repoPath: captured.repoRoot.path,
+                                    workspaceID: captured.workspaceID
+                                )
+                            } catch {
+                                worktreeOrchestrator.presentError(error)
+                            }
                         }
                     },
                     onCancel: { branchInputContext = nil }
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
+        }
+        .alert(
+            "Worktree creation failed",
+            isPresented: Binding(
+                get: { worktreeOrchestrator.lastError != nil },
+                set: { if !$0 { worktreeOrchestrator.lastError = nil } }
+            ),
+            presenting: worktreeOrchestrator.lastError
+        ) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { err in
+            Text(String(describing: err))   // WorktreeError conforms to CustomStringConvertible
         }
         .animation(.easeInOut(duration: 0.15), value: showDebugOverlay)
         .animation(.easeInOut(duration: 0.15), value: branchInputContext != nil)

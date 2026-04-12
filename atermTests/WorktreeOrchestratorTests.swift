@@ -280,6 +280,45 @@ struct WorktreeOrchestratorTests {
         #expect(!workspace.spaceCollection.spaces.contains(where: { $0.id == result.spaceID }))
     }
 
+    // MARK: - Remote ref
+
+    @Test
+    func createWorktreeSpace_withRemoteRef_skipsBranchExistsPreflight() async throws {
+        // Seed a remote with a branch, clone it — the branch only exists as origin/feat/r in the clone.
+        let remote = try makeTempGitRepo()
+        defer { cleanup(remote) }
+        try runGitSync(["branch", "feat/r"], in: remote)
+
+        let clone = FileManager.default.temporaryDirectory
+            .appendingPathComponent("aterm-orch-clone-\(UUID().uuidString)").path
+        defer { cleanup(clone) }
+        try runGitSync(["clone", remote, clone], in: FileManager.default.temporaryDirectory.path)
+
+        let (provider, workspace) = makeProvider(repoPath: clone)
+        let orchestrator = WorktreeOrchestrator(workspaceProvider: provider)
+
+        let result = try await orchestrator.createWorktreeSpace(
+            branchName: "feat/r",
+            existingBranch: true,
+            remoteRef: "origin/feat/r",
+            repoPath: clone,
+            workspaceID: workspace.id
+        )
+        #expect(result.existed == false)
+    }
+
+    @Test
+    func presentError_storesLastError() async {
+        let (provider, _) = makeProvider(repoPath: "/tmp")
+        let orchestrator = WorktreeOrchestrator(workspaceProvider: provider)
+        #expect(orchestrator.lastError == nil)
+
+        orchestrator.presentError(
+            WorktreeError.gitError(command: "test", stderr: "boom")
+        )
+        #expect(orchestrator.lastError != nil)
+    }
+
     // MARK: - Remove with uncommitted changes + force
 
     @Test func removeWithUncommittedChangesAndForce() async throws {

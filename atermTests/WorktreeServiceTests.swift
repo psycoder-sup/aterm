@@ -2,6 +2,31 @@ import Testing
 import Foundation
 @testable import aterm
 
+// MARK: - Lightweight git runner for assertions
+
+enum WorktreeServiceTestsRunner {
+    static func run(_ args: [String], in dir: String) async throws -> (exitCode: Int32, stdout: String, stderr: String) {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global().async {
+                let p = Process()
+                p.executableURL = URL(filePath: "/usr/bin/git")
+                p.arguments = args
+                p.currentDirectoryURL = URL(filePath: dir)
+                let o = Pipe(); let e = Pipe()
+                p.standardOutput = o; p.standardError = e
+                do {
+                    try p.run(); p.waitUntilExit()
+                    continuation.resume(returning: (
+                        p.terminationStatus,
+                        String(data: o.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? "",
+                        String(data: e.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                    ))
+                } catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+}
+
 struct WorktreeServiceTests {
 
     // MARK: - Helpers
@@ -341,6 +366,39 @@ struct WorktreeServiceTests {
         let content = try String(contentsOfFile: gitignorePath, encoding: .utf8)
         #expect(content.contains(".worktrees"))
         #expect(content.contains("# aterm worktree directory"))
+    }
+
+    // MARK: - Remote-only tracking
+
+    @Test
+    func createWorktree_fromRemoteOnlyBranch_createsLocalTrackingBranch() async throws {
+        let remote = try makeTempGitRepo()
+        defer { try? FileManager.default.removeItem(atPath: remote) }
+        try runGitSync(["branch", "feat/x"], in: remote)
+
+        let clone = try makeTempDir()
+        defer { try? FileManager.default.removeItem(atPath: clone) }
+        try runGitSync(["clone", remote, clone], in: FileManager.default.temporaryDirectory.path)
+
+        // "feat/x" exists only as origin/feat/x from the clone's perspective
+        let path = try await WorktreeService.createWorktree(
+            repoRoot: clone,
+            worktreeDir: ".worktrees",
+            branchName: "feat/x",
+            existingBranch: false,
+            remoteRef: "origin/feat/x"
+        )
+
+        // Verify local branch now exists in the clone
+        let refResult = try await WorktreeServiceTestsRunner.run(
+            ["rev-parse", "--verify", "refs/heads/feat/x"], in: clone
+        )
+        #expect(refResult.exitCode == 0)
+
+        // Cleanup
+        _ = try? await WorktreeServiceTestsRunner.run(
+            ["worktree", "remove", "--force", path], in: clone
+        )
     }
 }
 

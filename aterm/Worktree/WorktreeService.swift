@@ -70,18 +70,23 @@ enum WorktreeService {
     ///   - worktreeDir: Worktree base directory (absolute or relative to repo root).
     ///   - branchName: Branch name (may contain `/` for nested branches).
     ///   - existingBranch: If true, checks out an existing branch instead of creating a new one.
+    ///   - remoteRef: When provided, uses `git worktree add --track -b <branch> <path> <remoteRef>`
+    ///     to create a new local branch tracking the remote ref.
     /// - Returns: Absolute path to the created worktree directory.
     static func createWorktree(
         repoRoot: String,
         worktreeDir: String,
         branchName: String,
-        existingBranch: Bool
+        existingBranch: Bool,
+        remoteRef: String? = nil
     ) async throws -> String {
         let base = resolveWorktreeBase(repoRoot: repoRoot, worktreeDir: worktreeDir)
         let worktreePath = (base as NSString).appendingPathComponent(branchName)
 
         var args: [String]
-        if existingBranch {
+        if let remoteRef {
+            args = ["worktree", "add", "--track", "-b", branchName, worktreePath, remoteRef]
+        } else if existingBranch {
             args = ["worktree", "add", worktreePath, branchName]
         } else {
             args = ["worktree", "add", worktreePath, "-b", branchName]
