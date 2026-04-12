@@ -38,7 +38,10 @@ struct SidebarExpandedContentView: View {
                             NotificationCenter.default.post(
                                 name: .showWorktreeBranchInput,
                                 object: workspaceCollection,
-                                userInfo: [Notification.worktreeWorkingDirectoryKey: workspace.spaceCollection.resolveWorkingDirectory()]
+                                userInfo: [
+                                    Notification.worktreeWorkingDirectoryKey: workspace.spaceCollection.resolveWorkingDirectory(),
+                                    Notification.worktreeWorkspaceIDKey: workspace.id
+                                ]
                             )
                         },
                         onSetDirectory: { url in

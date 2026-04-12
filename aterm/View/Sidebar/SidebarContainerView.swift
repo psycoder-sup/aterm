@@ -11,6 +11,7 @@ extension Notification.Name {
 
 extension Notification {
     static let worktreeWorkingDirectoryKey = "workingDirectory"
+    static let worktreeWorkspaceIDKey = "worktreeWorkspaceID"
 }
 
 struct SidebarContainerView: View {
