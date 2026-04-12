@@ -43,10 +43,6 @@ final class WorkspaceWindowController: NSWindowController, NSWindowDelegate {
         super.init(window: window)
         window.delegate = self
 
-        workspaceCollection.onEmpty = { [weak self] in
-            self?.window?.close()
-        }
-
         installTrafficLightAligner(window: window)
         observeActiveWorkspaceName()
         installKeyboardMonitor()
