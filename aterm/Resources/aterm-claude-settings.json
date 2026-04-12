@@ -6,22 +6,31 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.session_id' | xargs -I{} aterm-cli pane set-restore-command --command 'claude --resume {}' 2>/dev/null || true"
+            "command": "jq -r 'select(.source == \"startup\" or .source == \"resume\" or .source == \"clear\" or .source == \"compact\") | .session_id' | xargs -r -I{} aterm-cli pane set-restore-command --command 'claude --resume {}' 2>/dev/null || true"
           },
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state active 2>/dev/null || true"
+            "command": "aterm-hook-log.sh SessionStart active"
           }
         ]
       }
     ],
     "PreToolUse": [
       {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "aterm-hook-log.sh PreToolUse"
+          }
+        ]
+      },
+      {
         "matcher": "AskUserQuestion",
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state needs_attention 2>/dev/null || true"
+            "command": "aterm-hook-log.sh PreToolUse.AskUserQuestion needs_attention"
           }
         ]
       }
@@ -32,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state busy 2>/dev/null || true"
+            "command": "aterm-hook-log.sh PostToolUse busy"
           }
         ]
       }
@@ -43,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state busy 2>/dev/null || true"
+            "command": "aterm-hook-log.sh UserPromptSubmit busy"
           }
         ]
       }
@@ -54,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state idle 2>/dev/null || true"
+            "command": "aterm-hook-log.sh Stop idle"
           }
         ]
       }
@@ -65,18 +74,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state needs_attention 2>/dev/null || true"
+            "command": "aterm-hook-log.sh PermissionRequest needs_attention"
           }
         ]
       }
     ],
     "Notification": [
       {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "aterm-hook-log.sh Notification"
+          }
+        ]
+      },
+      {
         "matcher": "idle_prompt",
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state idle 2>/dev/null || true"
+            "command": "aterm-hook-log.sh Notification.idle_prompt idle"
           }
         ]
       }
@@ -87,7 +105,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$ATERM_CLI_PATH status set --state inactive 2>/dev/null || true"
+            "command": "aterm-hook-log.sh SessionEnd inactive"
           }
         ]
       }

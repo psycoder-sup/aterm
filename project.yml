@@ -43,6 +43,7 @@ targets:
         excludes:
           - "Vendor/**"
           - "Resources/claude"
+          - "Resources/aterm-hook-log.sh"
           - "Resources/aterm-claude-settings.json"
           - "Resources/shell-integration/**"
     dependencies:
@@ -82,6 +83,14 @@ targets:
           - $(SRCROOT)/aterm/Resources/aterm-claude-settings.json
         outputFiles:
           - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/aterm-claude-settings.json
+      - script: |
+          cp -f "$SRCROOT/aterm/Resources/aterm-hook-log.sh" "$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/aterm-hook-log.sh"
+          chmod +x "$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/aterm-hook-log.sh"
+        name: Bundle Claude Hook Logger
+        inputFiles:
+          - $(SRCROOT)/aterm/Resources/aterm-hook-log.sh
+        outputFiles:
+          - $(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/Contents/Resources/aterm-hook-log.sh
       - script: |
           SI_SRC="$SRCROOT/aterm/Resources/shell-integration"
           SI_DST="$BUILT_PRODUCTS_DIR/${PRODUCT_NAME}.app/Contents/Resources/shell-integration"
