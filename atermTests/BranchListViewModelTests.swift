@@ -148,4 +148,106 @@ struct BranchListViewModelTests {
         let now = Date()
         #expect(BranchListViewModel.formatRelative(now.addingTimeInterval(-60 * 86_400), now: now) == "2mo ago")
     }
+
+    // MARK: - Fake service
+
+    private actor FakeService: BranchListProviding {
+        var entries: [BranchEntry]
+        var fetchCalls = 0
+        var fetchShouldThrow = false
+
+        init(_ entries: [BranchEntry]) {
+            self.entries = entries
+        }
+
+        func setEntries(_ new: [BranchEntry]) { self.entries = new }
+        func setFetchShouldThrow(_ v: Bool) { fetchShouldThrow = v }
+
+        func listBranches(repoRoot: String) async throws -> [BranchEntry] {
+            entries
+        }
+
+        func fetchRemotes(repoRoot: String) async throws {
+            fetchCalls += 1
+            if fetchShouldThrow {
+                throw WorktreeError.gitError(command: "git fetch", stderr: "no network")
+            }
+        }
+    }
+
+    private func makeModel(
+        entries: [BranchEntry]
+    ) -> (BranchListViewModel, FakeService) {
+        let service = FakeService(entries)
+        let model = BranchListViewModel(service: service)
+        return (model, service)
+    }
+
+    // MARK: - Filter
+
+    @Test
+    func filter_isCaseInsensitiveSubstring() async {
+        let (model, _) = makeModel(entries: [
+            entry(local: "feat/auth"),
+            entry(local: "feat/onboarding"),
+            entry(local: "main"),
+        ])
+        await model.load(repoRoot: "/unused")
+        model.query = "AUT"
+        #expect(model.rows.map(\.displayName) == ["feat/auth"])
+    }
+
+    @Test
+    func filter_autoHighlightsFirstMatch() async {
+        let (model, _) = makeModel(entries: [
+            entry(local: "feat/auth", date: Date()),
+            entry(local: "feat/account", date: Date().addingTimeInterval(-60)),
+        ])
+        await model.load(repoRoot: "/unused")
+        model.query = "feat"
+        #expect(model.highlightedID == "local:feat/auth")
+    }
+
+    // MARK: - Highlight
+
+    @Test
+    func moveHighlight_skipsInUseRows() async {
+        let now = Date()
+        let (model, _) = makeModel(entries: [
+            entry(local: "a", date: now),
+            entry(local: "b", date: now.addingTimeInterval(-10), inUse: true),
+            entry(local: "c", date: now.addingTimeInterval(-20)),
+        ])
+        await model.load(repoRoot: "/unused")
+        // highlight starts on "a"
+        #expect(model.highlightedID == "local:a")
+        model.moveHighlight(.down)
+        #expect(model.highlightedID == "local:c")  // skipped "b"
+        model.moveHighlight(.up)
+        #expect(model.highlightedID == "local:a")
+    }
+
+    @Test
+    func selectedRow_returnsNilForInUse() async {
+        let (model, _) = makeModel(entries: [
+            entry(local: "main", inUse: true, current: true),
+        ])
+        await model.load(repoRoot: "/unused")
+        // Only row is in-use — highlight should be nil.
+        #expect(model.highlightedID == nil)
+        #expect(model.selectedRow() == nil)
+    }
+
+    // MARK: - Collision
+
+    @Test
+    func collision_returnsMatchingRowInNewBranchMode() async {
+        let (model, _) = makeModel(entries: [
+            entry(local: "main"),
+        ])
+        await model.load(repoRoot: "/unused")
+        model.mode = .newBranch
+        #expect(model.collision(for: "main")?.displayName == "main")
+        #expect(model.collision(for: "feat/new") == nil)
+    }
 }

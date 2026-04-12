@@ -43,14 +43,63 @@ final class BranchListViewModel {
         self.service = service
     }
 
-    // MARK: - Placeholders (filled in later tasks)
+    func load(repoRoot: String) async {
+        // Placeholder until Task 6. For now just populate from the service once.
+        do {
+            rawEntries = try await service.listBranches(repoRoot: repoRoot)
+            loadError = nil
+        } catch {
+            rawEntries = []
+            loadError = error.localizedDescription
+        }
+        recomputeRows()
+    }
 
-    func load(repoRoot: String) async { fatalError("not implemented") }
-    func moveHighlight(_ direction: Direction) { fatalError("not implemented") }
-    func selectedRow() -> BranchRow? { fatalError("not implemented") }
-    func collision(for query: String) -> BranchRow? { fatalError("not implemented") }
+    func moveHighlight(_ direction: Direction) {
+        let selectable = rows.filter { !$0.isInUse }
+        guard !selectable.isEmpty else { highlightedID = nil; return }
 
-    private func recomputeRows() { /* filled in later task */ }
+        if let current = highlightedID,
+           let idx = selectable.firstIndex(where: { $0.id == current }) {
+            let nextIdx: Int
+            switch direction {
+            case .down: nextIdx = (idx + 1) % selectable.count
+            case .up:   nextIdx = (idx - 1 + selectable.count) % selectable.count
+            }
+            highlightedID = selectable[nextIdx].id
+        } else {
+            highlightedID = selectable.first?.id
+        }
+    }
+
+    func selectedRow() -> BranchRow? {
+        guard let id = highlightedID else { return nil }
+        return rows.first { $0.id == id && !$0.isInUse }
+    }
+
+    func collision(for query: String) -> BranchRow? {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return nil }
+        return rows.first { $0.displayName == q }
+    }
+
+    private func recomputeRows() {
+        let deduped = Self.dedup(rawEntries)
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        let filtered: [BranchRow]
+        if q.isEmpty {
+            filtered = deduped
+        } else {
+            filtered = deduped.filter { $0.displayName.lowercased().contains(q) }
+        }
+        rows = filtered
+        // Re-anchor highlight on the first selectable row in the new filtered list.
+        if let first = filtered.first(where: { !$0.isInUse }) {
+            highlightedID = first.id
+        } else {
+            highlightedID = nil
+        }
+    }
 
     // MARK: - Dedup (implemented below)
 
